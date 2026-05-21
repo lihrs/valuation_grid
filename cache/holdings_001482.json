@@ -1,0 +1,62 @@
+{
+  "fund_code": "001482",
+  "fund_name": "摩根新兴服务股票A",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 90.0,
+  "parsed_weight": 43.33,
+  "missing_weight": 46.67,
+  "positions": [
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 6.74
+    },
+    {
+      "stock_code": "002384",
+      "stock_name": "东山精密",
+      "weight": 5.71
+    },
+    {
+      "stock_code": "300390",
+      "stock_name": "天华新能",
+      "weight": 5.45
+    },
+    {
+      "stock_code": "300750",
+      "stock_name": "宁德时代",
+      "weight": 5.34
+    },
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 5.23
+    },
+    {
+      "stock_code": "600487",
+      "stock_name": "亨通光电",
+      "weight": 3.96
+    },
+    {
+      "stock_code": "002028",
+      "stock_name": "思源电气",
+      "weight": 3.17
+    },
+    {
+      "stock_code": "000792",
+      "stock_name": "盐湖股份",
+      "weight": 3.05
+    },
+    {
+      "stock_code": "300054",
+      "stock_name": "鼎龙股份",
+      "weight": 2.37
+    },
+    {
+      "stock_code": "002594",
+      "stock_name": "比亚迪",
+      "weight": 2.31
+    }
+  ],
+  "fetched_at": "2026-05-14 22:13:11",
+  "data_source": "eastmoney"
+}

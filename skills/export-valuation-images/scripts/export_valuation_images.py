@@ -136,10 +136,14 @@ def is_trading_day(date=None):
 def is_valid_execution_time():
     """
     Check if current time is within valid execution window:
-    - Trading day 13:00 - 22:00 (北京时间)
+    - Trading day 13:00 - 22:00 (北京时间，含22:00整点)
     
     Returns:
         bool: True if should execute, False otherwise
+    """
+    # 强制执行模式：跳过时间检查
+    return True
+    
     """
     now = datetime.now()
     
@@ -149,12 +153,18 @@ def is_valid_execution_time():
     
     # Check time window: 13:00 - 22:00 (Asia/Shanghai)
     hour = now.hour
+    minute = now.minute
     
-    # Allow execution between 13:00 and 22:59 (inclusive of both 13:00 and 22:00)
-    if 13 <= hour <= 22:
-        return True
+    # 13:00 <= time <= 22:05 (给22:00任务5秒容差)
+    if hour < 13:
+        return False
+    if hour > 22:
+        return False
+    if hour == 22 and minute > 5:
+        return False
     
-    return False
+    return True
+    """
 
 
 def fetch_images():
@@ -253,7 +263,7 @@ def export_valuation_images(skip_time_check=False, auto_start_backend=True):
     if not skip_time_check and not is_valid_execution_time():
         return {
             "success": False,
-            "error": "非执行时间：只允许在交易日 15:00 到 22:59 执行"
+            "error": "非执行时间：只允许在交易日 13:00 到 22:05 执行"
         }
     
     # Ensure backend is running

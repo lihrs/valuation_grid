@@ -1,0 +1,52 @@
+{
+  "fund_code": "015877",
+  "fund_name": "富国中证消费电子主题ETF发起式联接C",
+  "holdings_asof_date": "2024-09-30",
+  "stock_total_weight": 0.0,
+  "parsed_weight": 0.19,
+  "missing_weight": 0,
+  "positions": [
+    {
+      "stock_code": "601138",
+      "stock_name": "工业富联",
+      "weight": 0.08
+    },
+    {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "weight": 0.03
+    },
+    {
+      "stock_code": "688538",
+      "stock_name": "和辉光电",
+      "weight": 0.02
+    },
+    {
+      "stock_code": "688772",
+      "stock_name": "珠海冠宇",
+      "weight": 0.02
+    },
+    {
+      "stock_code": "600745",
+      "stock_name": "闻泰科技",
+      "weight": 0.01
+    },
+    {
+      "stock_code": "688521",
+      "stock_name": "芯原股份",
+      "weight": 0.01
+    },
+    {
+      "stock_code": "600100",
+      "stock_name": "同方股份",
+      "weight": 0.01
+    },
+    {
+      "stock_code": "605358",
+      "stock_name": "立昂微",
+      "weight": 0.01
+    }
+  ],
+  "fetched_at": "2026-05-21 23:29:10",
+  "data_source": "eastmoney"
+}

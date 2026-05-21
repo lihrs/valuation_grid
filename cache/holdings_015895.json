@@ -1,0 +1,62 @@
+{
+  "fund_code": "015895",
+  "fund_name": "平安中证消费电子主题ETF发起式联接C",
+  "holdings_asof_date": "2022-09-30",
+  "stock_total_weight": 0.0,
+  "parsed_weight": 0.81,
+  "missing_weight": 0,
+  "positions": [
+    {
+      "stock_code": "688981",
+      "stock_name": "中芯国际",
+      "weight": 0.16
+    },
+    {
+      "stock_code": "603986",
+      "stock_name": "兆易创新",
+      "weight": 0.13
+    },
+    {
+      "stock_code": "603501",
+      "stock_name": "韦尔股份",
+      "weight": 0.11
+    },
+    {
+      "stock_code": "601138",
+      "stock_name": "工业富联",
+      "weight": 0.07
+    },
+    {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "weight": 0.07
+    },
+    {
+      "stock_code": "600745",
+      "stock_name": "闻泰科技",
+      "weight": 0.07
+    },
+    {
+      "stock_code": "600460",
+      "stock_name": "士兰微",
+      "weight": 0.06
+    },
+    {
+      "stock_code": "688036",
+      "stock_name": "传音控股",
+      "weight": 0.05
+    },
+    {
+      "stock_code": "688008",
+      "stock_name": "澜起科技",
+      "weight": 0.05
+    },
+    {
+      "stock_code": "605358",
+      "stock_name": "立昂微",
+      "weight": 0.04
+    }
+  ],
+  "fetched_at": "2026-05-21 23:29:10",
+  "data_source": "eastmoney"
+}

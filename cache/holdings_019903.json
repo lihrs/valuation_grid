@@ -1,0 +1,62 @@
+{
+  "fund_code": "019903",
+  "fund_name": "国寿安保先进制造股票发起式C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 93.5,
+  "parsed_weight": 46.52,
+  "missing_weight": 46.98,
+  "positions": [
+    {
+      "stock_code": "300751",
+      "stock_name": "迈为股份",
+      "weight": 6.17
+    },
+    {
+      "stock_code": "603986",
+      "stock_name": "兆易创新",
+      "weight": 5.17
+    },
+    {
+      "stock_code": "002384",
+      "stock_name": "东山精密",
+      "weight": 5.03
+    },
+    {
+      "stock_code": "002465",
+      "stock_name": "海格通信",
+      "weight": 4.99
+    },
+    {
+      "stock_code": "300316",
+      "stock_name": "晶盛机电",
+      "weight": 4.92
+    },
+    {
+      "stock_code": "300776",
+      "stock_name": "帝尔激光",
+      "weight": 4.37
+    },
+    {
+      "stock_code": "601615",
+      "stock_name": "明阳智能",
+      "weight": 4.2
+    },
+    {
+      "stock_code": "688678",
+      "stock_name": "福立旺",
+      "weight": 4.03
+    },
+    {
+      "stock_code": "600879",
+      "stock_name": "航天电子",
+      "weight": 3.95
+    },
+    {
+      "stock_code": "600345",
+      "stock_name": "长江通信",
+      "weight": 3.69
+    }
+  ],
+  "fetched_at": "2026-05-14 22:12:30",
+  "data_source": "eastmoney"
+}

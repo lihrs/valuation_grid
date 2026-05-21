@@ -1,0 +1,62 @@
+{
+  "fund_code": "018817",
+  "fund_name": "景顺长城中小创精选股票C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 89.23,
+  "parsed_weight": 47.27,
+  "missing_weight": 41.96,
+  "positions": [
+    {
+      "stock_code": "300408",
+      "stock_name": "三环集团",
+      "weight": 8.26
+    },
+    {
+      "stock_code": "300274",
+      "stock_name": "阳光电源",
+      "weight": 6.4
+    },
+    {
+      "stock_code": "002475",
+      "stock_name": "立讯精密",
+      "weight": 5.25
+    },
+    {
+      "stock_code": "300567",
+      "stock_name": "精测电子",
+      "weight": 4.48
+    },
+    {
+      "stock_code": "002008",
+      "stock_name": "大族激光",
+      "weight": 4.17
+    },
+    {
+      "stock_code": "688256",
+      "stock_name": "寒武纪",
+      "weight": 3.98
+    },
+    {
+      "stock_code": "300677",
+      "stock_name": "英科医疗",
+      "weight": 3.89
+    },
+    {
+      "stock_code": "605117",
+      "stock_name": "德业股份",
+      "weight": 3.73
+    },
+    {
+      "stock_code": "002436",
+      "stock_name": "兴森科技",
+      "weight": 3.6
+    },
+    {
+      "stock_code": "300870",
+      "stock_name": "欧陆通",
+      "weight": 3.51
+    }
+  ],
+  "fetched_at": "2026-05-14 22:14:25",
+  "data_source": "eastmoney"
+}

@@ -1,0 +1,62 @@
+{
+  "fund_code": "025331",
+  "fund_name": "民生加银聚优精选混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 92.56,
+  "parsed_weight": 42.66,
+  "missing_weight": 49.9,
+  "positions": [
+    {
+      "stock_code": "688521",
+      "stock_name": "芯原股份",
+      "weight": 5.87
+    },
+    {
+      "stock_code": "300666",
+      "stock_name": "江丰电子",
+      "weight": 5.15
+    },
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 4.66
+    },
+    {
+      "stock_code": "688627",
+      "stock_name": "精智达",
+      "weight": 4.6
+    },
+    {
+      "stock_code": "688072",
+      "stock_name": "拓荆科技",
+      "weight": 4.5
+    },
+    {
+      "stock_code": "603618",
+      "stock_name": "杭电股份",
+      "weight": 3.97
+    },
+    {
+      "stock_code": "688200",
+      "stock_name": "华峰测控",
+      "weight": 3.61
+    },
+    {
+      "stock_code": "688361",
+      "stock_name": "中科飞测",
+      "weight": 3.59
+    },
+    {
+      "stock_code": "688630",
+      "stock_name": "芯碁微装",
+      "weight": 3.55
+    },
+    {
+      "stock_code": "300567",
+      "stock_name": "精测电子",
+      "weight": 3.16
+    }
+  ],
+  "fetched_at": "2026-05-14 22:13:10",
+  "data_source": "eastmoney"
+}

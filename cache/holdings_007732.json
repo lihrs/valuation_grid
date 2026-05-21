@@ -1,0 +1,62 @@
+{
+  "fund_code": "007732",
+  "fund_name": "民生加银持续成长混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 93.72,
+  "parsed_weight": 45.22,
+  "missing_weight": 48.5,
+  "positions": [
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 7.65
+    },
+    {
+      "stock_code": "688041",
+      "stock_name": "海光信息",
+      "weight": 5.64
+    },
+    {
+      "stock_code": "688521",
+      "stock_name": "芯原股份",
+      "weight": 4.88
+    },
+    {
+      "stock_code": "688072",
+      "stock_name": "拓荆科技",
+      "weight": 4.37
+    },
+    {
+      "stock_code": "300750",
+      "stock_name": "宁德时代",
+      "weight": 4.01
+    },
+    {
+      "stock_code": "02643",
+      "stock_name": "曹操出行",
+      "weight": 4.0
+    },
+    {
+      "stock_code": "002353",
+      "stock_name": "杰瑞股份",
+      "weight": 3.85
+    },
+    {
+      "stock_code": "601689",
+      "stock_name": "拓普集团",
+      "weight": 3.69
+    },
+    {
+      "stock_code": "002028",
+      "stock_name": "思源电气",
+      "weight": 3.6
+    },
+    {
+      "stock_code": "000973",
+      "stock_name": "佛塑科技",
+      "weight": 3.53
+    }
+  ],
+  "fetched_at": "2026-05-14 22:13:32",
+  "data_source": "eastmoney"
+}

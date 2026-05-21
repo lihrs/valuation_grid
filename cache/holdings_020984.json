@@ -1,0 +1,62 @@
+{
+  "fund_code": "020984",
+  "fund_name": "博时国证消费电子主题指数发起式C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 94.79,
+  "parsed_weight": 49.66,
+  "missing_weight": 45.13,
+  "positions": [
+    {
+      "stock_code": "002475",
+      "stock_name": "立讯精密",
+      "weight": 8.02
+    },
+    {
+      "stock_code": "300476",
+      "stock_name": "胜宏科技",
+      "weight": 7.02
+    },
+    {
+      "stock_code": "603986",
+      "stock_name": "兆易创新",
+      "weight": 6.85
+    },
+    {
+      "stock_code": "002384",
+      "stock_name": "东山精密",
+      "weight": 5.99
+    },
+    {
+      "stock_code": "000725",
+      "stock_name": "京东方A",
+      "weight": 5.85
+    },
+    {
+      "stock_code": "603501",
+      "stock_name": "豪威集团",
+      "weight": 3.61
+    },
+    {
+      "stock_code": "000100",
+      "stock_name": "TCL科技",
+      "weight": 3.54
+    },
+    {
+      "stock_code": "688525",
+      "stock_name": "佰维存储",
+      "weight": 3.21
+    },
+    {
+      "stock_code": "300408",
+      "stock_name": "三环集团",
+      "weight": 3.03
+    },
+    {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "weight": 2.54
+    }
+  ],
+  "fetched_at": "2026-05-14 22:14:47",
+  "data_source": "eastmoney"
+}

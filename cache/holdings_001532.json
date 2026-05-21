@@ -1,0 +1,72 @@
+{
+  "fund_code": "001532",
+  "fund_name": "华安文体健康混合A",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 91.16,
+  "parsed_weight": 43.82,
+  "missing_weight": 47.34,
+  "positions": [
+    {
+      "stock_code": "300394",
+      "stock_name": "天孚通信",
+      "weight": 8.61
+    },
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 7.26
+    },
+    {
+      "stock_code": "002225",
+      "stock_name": "濮耐股份",
+      "weight": 4.13
+    },
+    {
+      "stock_code": "603950",
+      "stock_name": "长源东谷",
+      "weight": 3.49
+    },
+    {
+      "stock_code": "002222",
+      "stock_name": "福晶科技",
+      "weight": 3.33
+    },
+    {
+      "stock_code": "001301",
+      "stock_name": "尚太科技",
+      "weight": 3.05
+    },
+    {
+      "stock_code": "603568",
+      "stock_name": "伟明环保",
+      "weight": 3.05
+    },
+    {
+      "stock_code": "688331",
+      "stock_name": "荣昌生物",
+      "weight": 2.72
+    },
+    {
+      "stock_code": "002027",
+      "stock_name": "分众传媒",
+      "weight": 2.67
+    },
+    {
+      "stock_code": "002916",
+      "stock_name": "深南电路",
+      "weight": 2.59
+    },
+    {
+      "stock_code": "002957",
+      "stock_name": "科瑞技术",
+      "weight": 1.85
+    },
+    {
+      "stock_code": "603722",
+      "stock_name": "阿科力",
+      "weight": 1.07
+    }
+  ],
+  "fetched_at": "2026-05-14 22:12:51",
+  "data_source": "eastmoney"
+}

@@ -1,0 +1,62 @@
+{
+  "fund_code": "010842",
+  "fund_name": "华宝科技先锋混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 93.37,
+  "parsed_weight": 26.24,
+  "missing_weight": 67.13,
+  "positions": [
+    {
+      "stock_code": "688608",
+      "stock_name": "恒玄科技",
+      "weight": 2.73
+    },
+    {
+      "stock_code": "601138",
+      "stock_name": "工业富联",
+      "weight": 2.7
+    },
+    {
+      "stock_code": "688213",
+      "stock_name": "思特威",
+      "weight": 2.69
+    },
+    {
+      "stock_code": "688120",
+      "stock_name": "华海清科",
+      "weight": 2.67
+    },
+    {
+      "stock_code": "688072",
+      "stock_name": "拓荆科技",
+      "weight": 2.66
+    },
+    {
+      "stock_code": "688256",
+      "stock_name": "寒武纪",
+      "weight": 2.61
+    },
+    {
+      "stock_code": "002236",
+      "stock_name": "大华股份",
+      "weight": 2.55
+    },
+    {
+      "stock_code": "600941",
+      "stock_name": "中国移动",
+      "weight": 2.55
+    },
+    {
+      "stock_code": "002415",
+      "stock_name": "海康威视",
+      "weight": 2.54
+    },
+    {
+      "stock_code": "002517",
+      "stock_name": "恺英网络",
+      "weight": 2.54
+    }
+  ],
+  "fetched_at": "2026-05-21 23:29:09",
+  "data_source": "eastmoney"
+}

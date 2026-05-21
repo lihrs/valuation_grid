@@ -1,0 +1,62 @@
+{
+  "fund_code": "018301",
+  "fund_name": "华夏消费电子ETF联接C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 2.54,
+  "parsed_weight": 1.33,
+  "missing_weight": 1.21,
+  "positions": [
+    {
+      "stock_code": "002475",
+      "stock_name": "立讯精密",
+      "weight": 0.21
+    },
+    {
+      "stock_code": "300476",
+      "stock_name": "胜宏科技",
+      "weight": 0.19
+    },
+    {
+      "stock_code": "603986",
+      "stock_name": "兆易创新",
+      "weight": 0.18
+    },
+    {
+      "stock_code": "002384",
+      "stock_name": "东山精密",
+      "weight": 0.16
+    },
+    {
+      "stock_code": "000725",
+      "stock_name": "京东方A",
+      "weight": 0.16
+    },
+    {
+      "stock_code": "603501",
+      "stock_name": "豪威集团",
+      "weight": 0.1
+    },
+    {
+      "stock_code": "000100",
+      "stock_name": "TCL科技",
+      "weight": 0.1
+    },
+    {
+      "stock_code": "688525",
+      "stock_name": "佰维存储",
+      "weight": 0.08
+    },
+    {
+      "stock_code": "300408",
+      "stock_name": "三环集团",
+      "weight": 0.08
+    },
+    {
+      "stock_code": "600584",
+      "stock_name": "长电科技",
+      "weight": 0.07
+    }
+  ],
+  "fetched_at": "2026-05-21 23:29:10",
+  "data_source": "eastmoney"
+}

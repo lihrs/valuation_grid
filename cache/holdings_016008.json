@@ -1,0 +1,17 @@
+{
+  "fund_code": "016008",
+  "fund_name": "招商中证消费电子主题ETF联接C",
+  "holdings_asof_date": "2025-12-31",
+  "stock_total_weight": 0.0,
+  "parsed_weight": 0.04,
+  "missing_weight": 0,
+  "positions": [
+    {
+      "stock_code": "002049",
+      "stock_name": "紫光国微",
+      "weight": 0.04
+    }
+  ],
+  "fetched_at": "2026-05-21 23:29:10",
+  "data_source": "eastmoney"
+}

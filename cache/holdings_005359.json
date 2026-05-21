@@ -1,0 +1,62 @@
+{
+  "fund_code": "005359",
+  "fund_name": "东方阿尔法精选混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 93.98,
+  "parsed_weight": 55.52,
+  "missing_weight": 38.46,
+  "positions": [
+    {
+      "stock_code": "301396",
+      "stock_name": "宏景科技",
+      "weight": 9.15
+    },
+    {
+      "stock_code": "300017",
+      "stock_name": "网宿科技",
+      "weight": 6.68
+    },
+    {
+      "stock_code": "300857",
+      "stock_name": "协创数据",
+      "weight": 5.79
+    },
+    {
+      "stock_code": "688158",
+      "stock_name": "优刻得",
+      "weight": 5.53
+    },
+    {
+      "stock_code": "300166",
+      "stock_name": "东方国信",
+      "weight": 5.06
+    },
+    {
+      "stock_code": "600590",
+      "stock_name": "泰豪科技",
+      "weight": 4.85
+    },
+    {
+      "stock_code": "600589",
+      "stock_name": "大位科技",
+      "weight": 4.72
+    },
+    {
+      "stock_code": "002929",
+      "stock_name": "润建股份",
+      "weight": 4.71
+    },
+    {
+      "stock_code": "600673",
+      "stock_name": "东阳光",
+      "weight": 4.68
+    },
+    {
+      "stock_code": "603269",
+      "stock_name": "海鸥股份",
+      "weight": 4.35
+    }
+  ],
+  "fetched_at": "2026-05-14 22:10:33",
+  "data_source": "eastmoney"
+}

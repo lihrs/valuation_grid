@@ -1,0 +1,62 @@
+{
+  "fund_code": "001618",
+  "fund_name": "天弘中证电子ETF联接C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 2.76,
+  "parsed_weight": 0.99,
+  "missing_weight": 1.77,
+  "positions": [
+    {
+      "stock_code": "002475",
+      "stock_name": "立讯精密",
+      "weight": 0.13
+    },
+    {
+      "stock_code": "688256",
+      "stock_name": "寒武纪",
+      "weight": 0.12
+    },
+    {
+      "stock_code": "601138",
+      "stock_name": "工业富联",
+      "weight": 0.11
+    },
+    {
+      "stock_code": "688041",
+      "stock_name": "海光信息",
+      "weight": 0.1
+    },
+    {
+      "stock_code": "002371",
+      "stock_name": "北方华创",
+      "weight": 0.1
+    },
+    {
+      "stock_code": "688981",
+      "stock_name": "中芯国际",
+      "weight": 0.1
+    },
+    {
+      "stock_code": "603986",
+      "stock_name": "兆易创新",
+      "weight": 0.09
+    },
+    {
+      "stock_code": "300476",
+      "stock_name": "胜宏科技",
+      "weight": 0.08
+    },
+    {
+      "stock_code": "688008",
+      "stock_name": "澜起科技",
+      "weight": 0.08
+    },
+    {
+      "stock_code": "000725",
+      "stock_name": "京东方A",
+      "weight": 0.08
+    }
+  ],
+  "fetched_at": "2026-05-21 23:29:10",
+  "data_source": "eastmoney"
+}

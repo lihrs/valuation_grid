@@ -1,0 +1,62 @@
+{
+  "fund_code": "020433",
+  "fund_name": "金信核心竞争力混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 89.28,
+  "parsed_weight": 57.93,
+  "missing_weight": 31.35,
+  "positions": [
+    {
+      "stock_code": "600673",
+      "stock_name": "东阳光",
+      "weight": 8.39
+    },
+    {
+      "stock_code": "300017",
+      "stock_name": "网宿科技",
+      "weight": 7.8
+    },
+    {
+      "stock_code": "301396",
+      "stock_name": "宏景科技",
+      "weight": 7.11
+    },
+    {
+      "stock_code": "600589",
+      "stock_name": "大位科技",
+      "weight": 7.02
+    },
+    {
+      "stock_code": "002335",
+      "stock_name": "科华数据",
+      "weight": 5.64
+    },
+    {
+      "stock_code": "688158",
+      "stock_name": "优刻得",
+      "weight": 5.11
+    },
+    {
+      "stock_code": "300442",
+      "stock_name": "润泽科技",
+      "weight": 4.46
+    },
+    {
+      "stock_code": "002364",
+      "stock_name": "中恒电气",
+      "weight": 4.28
+    },
+    {
+      "stock_code": "300846",
+      "stock_name": "首都在线",
+      "weight": 4.17
+    },
+    {
+      "stock_code": "300469",
+      "stock_name": "信息发展",
+      "weight": 3.95
+    }
+  ],
+  "fetched_at": "2026-05-14 22:11:08",
+  "data_source": "eastmoney"
+}

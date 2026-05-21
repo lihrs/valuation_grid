@@ -1,0 +1,62 @@
+{
+  "fund_code": "017916",
+  "fund_name": "国寿安保成长优选股票C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 92.33,
+  "parsed_weight": 58.98,
+  "missing_weight": 33.35,
+  "positions": [
+    {
+      "stock_code": "600673",
+      "stock_name": "东阳光",
+      "weight": 8.67
+    },
+    {
+      "stock_code": "000962",
+      "stock_name": "东方钽业",
+      "weight": 7.68
+    },
+    {
+      "stock_code": "688129",
+      "stock_name": "东来技术",
+      "weight": 7.16
+    },
+    {
+      "stock_code": "601126",
+      "stock_name": "四方股份",
+      "weight": 6.16
+    },
+    {
+      "stock_code": "301216",
+      "stock_name": "万凯新材",
+      "weight": 6.11
+    },
+    {
+      "stock_code": "300433",
+      "stock_name": "蓝思科技",
+      "weight": 5.89
+    },
+    {
+      "stock_code": "688025",
+      "stock_name": "杰普特",
+      "weight": 5.01
+    },
+    {
+      "stock_code": "300776",
+      "stock_name": "帝尔激光",
+      "weight": 4.15
+    },
+    {
+      "stock_code": "002384",
+      "stock_name": "东山精密",
+      "weight": 4.09
+    },
+    {
+      "stock_code": "002488",
+      "stock_name": "金固股份",
+      "weight": 4.06
+    }
+  ],
+  "fetched_at": "2026-05-14 22:12:14",
+  "data_source": "eastmoney"
+}

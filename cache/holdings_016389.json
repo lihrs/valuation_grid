@@ -1,0 +1,62 @@
+{
+  "fund_code": "016389",
+  "fund_name": "汇安均衡成长混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 87.76,
+  "parsed_weight": 56.47,
+  "missing_weight": 31.29,
+  "positions": [
+    {
+      "stock_code": "300442",
+      "stock_name": "润泽科技",
+      "weight": 8.12
+    },
+    {
+      "stock_code": "301396",
+      "stock_name": "宏景科技",
+      "weight": 7.26
+    },
+    {
+      "stock_code": "603881",
+      "stock_name": "数据港",
+      "weight": 5.65
+    },
+    {
+      "stock_code": "688258",
+      "stock_name": "卓易信息",
+      "weight": 5.42
+    },
+    {
+      "stock_code": "001389",
+      "stock_name": "广合科技",
+      "weight": 5.26
+    },
+    {
+      "stock_code": "300113",
+      "stock_name": "顺网科技",
+      "weight": 5.23
+    },
+    {
+      "stock_code": "300017",
+      "stock_name": "网宿科技",
+      "weight": 5.08
+    },
+    {
+      "stock_code": "688158",
+      "stock_name": "优刻得",
+      "weight": 4.86
+    },
+    {
+      "stock_code": "600673",
+      "stock_name": "东阳光",
+      "weight": 4.8
+    },
+    {
+      "stock_code": "301018",
+      "stock_name": "申菱环境",
+      "weight": 4.79
+    }
+  ],
+  "fetched_at": "2026-05-14 22:10:51",
+  "data_source": "eastmoney"
+}

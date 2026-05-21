@@ -1,0 +1,62 @@
+{
+  "fund_code": "014353",
+  "fund_name": "东方创新成长混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 90.13,
+  "parsed_weight": 63.21,
+  "missing_weight": 26.92,
+  "positions": [
+    {
+      "stock_code": "688158",
+      "stock_name": "优刻得",
+      "weight": 8.98
+    },
+    {
+      "stock_code": "300166",
+      "stock_name": "东方国信",
+      "weight": 8.82
+    },
+    {
+      "stock_code": "300846",
+      "stock_name": "首都在线",
+      "weight": 8.79
+    },
+    {
+      "stock_code": "03896",
+      "stock_name": "金山云",
+      "weight": 8.59
+    },
+    {
+      "stock_code": "301396",
+      "stock_name": "宏景科技",
+      "weight": 4.84
+    },
+    {
+      "stock_code": "600602",
+      "stock_name": "云赛智联",
+      "weight": 4.82
+    },
+    {
+      "stock_code": "600673",
+      "stock_name": "东阳光",
+      "weight": 4.76
+    },
+    {
+      "stock_code": "002929",
+      "stock_name": "润建股份",
+      "weight": 4.74
+    },
+    {
+      "stock_code": "300383",
+      "stock_name": "光环新网",
+      "weight": 4.5
+    },
+    {
+      "stock_code": "601778",
+      "stock_name": "晶科科技",
+      "weight": 4.37
+    }
+  ],
+  "fetched_at": "2026-05-14 22:10:50",
+  "data_source": "eastmoney"
+}

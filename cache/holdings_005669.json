@@ -1,0 +1,92 @@
+{
+  "fund_code": "005669",
+  "fund_name": "前海开源公用事业股票",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 91.33,
+  "parsed_weight": 64.69,
+  "missing_weight": 26.64,
+  "positions": [
+    {
+      "stock_code": "300693",
+      "stock_name": "盛弘股份",
+      "weight": 8.7
+    },
+    {
+      "stock_code": "002352",
+      "stock_name": "顺丰控股",
+      "weight": 8.0
+    },
+    {
+      "stock_code": "600563",
+      "stock_name": "法拉电子",
+      "weight": 7.4
+    },
+    {
+      "stock_code": "02380",
+      "stock_name": "中国电力",
+      "weight": 6.37
+    },
+    {
+      "stock_code": "00956",
+      "stock_name": "新天绿色能源",
+      "weight": 6.04
+    },
+    {
+      "stock_code": "603713",
+      "stock_name": "密尔克卫",
+      "weight": 5.96
+    },
+    {
+      "stock_code": "300068",
+      "stock_name": "南都电源",
+      "weight": 4.06
+    },
+    {
+      "stock_code": "00968",
+      "stock_name": "信义光能",
+      "weight": 3.88
+    },
+    {
+      "stock_code": "00916",
+      "stock_name": "龙源电力",
+      "weight": 3.59
+    },
+    {
+      "stock_code": "600875",
+      "stock_name": "东方电气",
+      "weight": 3.15
+    },
+    {
+      "stock_code": "600589",
+      "stock_name": "大位科技",
+      "weight": 2.26
+    },
+    {
+      "stock_code": "002488",
+      "stock_name": "金固股份",
+      "weight": 2.21
+    },
+    {
+      "stock_code": "603712",
+      "stock_name": "七一二",
+      "weight": 0.96
+    },
+    {
+      "stock_code": "002801",
+      "stock_name": "微光股份",
+      "weight": 0.89
+    },
+    {
+      "stock_code": "300656",
+      "stock_name": "民德电子",
+      "weight": 0.68
+    },
+    {
+      "stock_code": "300491",
+      "stock_name": "通合科技",
+      "weight": 0.54
+    }
+  ],
+  "fetched_at": "2026-05-14 22:12:50",
+  "data_source": "eastmoney"
+}

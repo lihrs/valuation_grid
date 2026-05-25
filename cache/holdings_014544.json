@@ -1,0 +1,262 @@
+{
+  "fund_code": "014544",
+  "fund_name": "汇添富中证沪港深云计算产业ETF联接C",
+  "holdings_asof_date": "2025-09-30",
+  "stock_total_weight": 0.0,
+  "parsed_weight": 93.11,
+  "missing_weight": 0,
+  "positions": [
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 10.12
+    },
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 10.0
+    },
+    {
+      "stock_code": "00700",
+      "stock_name": "腾讯控股",
+      "weight": 8.53
+    },
+    {
+      "stock_code": "09988",
+      "stock_name": "阿里巴巴-W",
+      "weight": 7.73
+    },
+    {
+      "stock_code": "603019",
+      "stock_name": "中科曙光",
+      "weight": 5.45
+    },
+    {
+      "stock_code": "688111",
+      "stock_name": "金山办公",
+      "weight": 3.88
+    },
+    {
+      "stock_code": "00268",
+      "stock_name": "金蝶国际",
+      "weight": 3.23
+    },
+    {
+      "stock_code": "000977",
+      "stock_name": "浪潮信息",
+      "weight": 3.08
+    },
+    {
+      "stock_code": "600570",
+      "stock_name": "恒生电子",
+      "weight": 2.85
+    },
+    {
+      "stock_code": "000938",
+      "stock_name": "紫光股份",
+      "weight": 2.7
+    },
+    {
+      "stock_code": "300339",
+      "stock_name": "润和软件",
+      "weight": 2.35
+    },
+    {
+      "stock_code": "002261",
+      "stock_name": "拓维信息",
+      "weight": 1.77
+    },
+    {
+      "stock_code": "600588",
+      "stock_name": "用友网络",
+      "weight": 1.73
+    },
+    {
+      "stock_code": "300442",
+      "stock_name": "润泽科技",
+      "weight": 1.7
+    },
+    {
+      "stock_code": "03888",
+      "stock_name": "金山软件",
+      "weight": 1.59
+    },
+    {
+      "stock_code": "300454",
+      "stock_name": "深信服",
+      "weight": 1.5
+    },
+    {
+      "stock_code": "300017",
+      "stock_name": "网宿科技",
+      "weight": 1.5
+    },
+    {
+      "stock_code": "002410",
+      "stock_name": "广联达",
+      "weight": 1.24
+    },
+    {
+      "stock_code": "600845",
+      "stock_name": "宝信软件",
+      "weight": 1.18
+    },
+    {
+      "stock_code": "002065",
+      "stock_name": "东华软件",
+      "weight": 1.17
+    },
+    {
+      "stock_code": "300383",
+      "stock_name": "光环新网",
+      "weight": 1.13
+    },
+    {
+      "stock_code": "300170",
+      "stock_name": "汉得信息",
+      "weight": 1.06
+    },
+    {
+      "stock_code": "300253",
+      "stock_name": "卫宁健康",
+      "weight": 1.06
+    },
+    {
+      "stock_code": "03896",
+      "stock_name": "金山云",
+      "weight": 0.92
+    },
+    {
+      "stock_code": "688568",
+      "stock_name": "中科星图",
+      "weight": 0.88
+    },
+    {
+      "stock_code": "300738",
+      "stock_name": "奥飞数据",
+      "weight": 0.88
+    },
+    {
+      "stock_code": "300229",
+      "stock_name": "拓尔思",
+      "weight": 0.87
+    },
+    {
+      "stock_code": "002335",
+      "stock_name": "科华数据",
+      "weight": 0.83
+    },
+    {
+      "stock_code": "00354",
+      "stock_name": "中国软件国际",
+      "weight": 0.79
+    },
+    {
+      "stock_code": "600602",
+      "stock_name": "云赛智联",
+      "weight": 0.79
+    },
+    {
+      "stock_code": "300348",
+      "stock_name": "长亮科技",
+      "weight": 0.73
+    },
+    {
+      "stock_code": "002396",
+      "stock_name": "星网锐捷",
+      "weight": 0.71
+    },
+    {
+      "stock_code": "300624",
+      "stock_name": "万兴科技",
+      "weight": 0.71
+    },
+    {
+      "stock_code": "600410",
+      "stock_name": "华胜天成",
+      "weight": 0.71
+    },
+    {
+      "stock_code": "002123",
+      "stock_name": "梦网科技",
+      "weight": 0.64
+    },
+    {
+      "stock_code": "300212",
+      "stock_name": "易华录",
+      "weight": 0.64
+    },
+    {
+      "stock_code": "300166",
+      "stock_name": "东方国信",
+      "weight": 0.63
+    },
+    {
+      "stock_code": "603881",
+      "stock_name": "数据港",
+      "weight": 0.62
+    },
+    {
+      "stock_code": "002368",
+      "stock_name": "太极股份",
+      "weight": 0.6
+    },
+    {
+      "stock_code": "600131",
+      "stock_name": "国网信通",
+      "weight": 0.58
+    },
+    {
+      "stock_code": "300047",
+      "stock_name": "天源迪科",
+      "weight": 0.56
+    },
+    {
+      "stock_code": "300687",
+      "stock_name": "赛意信息",
+      "weight": 0.54
+    },
+    {
+      "stock_code": "688158",
+      "stock_name": "优刻得",
+      "weight": 0.51
+    },
+    {
+      "stock_code": "300168",
+      "stock_name": "万达信息",
+      "weight": 0.51
+    },
+    {
+      "stock_code": "603039",
+      "stock_name": "泛微网络",
+      "weight": 0.48
+    },
+    {
+      "stock_code": "002153",
+      "stock_name": "石基信息",
+      "weight": 0.45
+    },
+    {
+      "stock_code": "920808",
+      "stock_name": "曙光数创",
+      "weight": 0.26
+    },
+    {
+      "stock_code": "01686",
+      "stock_name": "新意网集团",
+      "weight": 0.26
+    },
+    {
+      "stock_code": "02556",
+      "stock_name": "迈富时",
+      "weight": 0.23
+    },
+    {
+      "stock_code": "688225",
+      "stock_name": "亚信安全",
+      "weight": 0.23
+    }
+  ],
+  "fetched_at": "2026-05-22 22:25:40",
+  "data_source": "eastmoney"
+}

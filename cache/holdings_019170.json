@@ -1,0 +1,62 @@
+{
+  "fund_code": "019170",
+  "fund_name": "天弘沪港深云计算ETF联接C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 4.84,
+  "parsed_weight": 3.01,
+  "missing_weight": 1.83,
+  "positions": [
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 0.55
+    },
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 0.53
+    },
+    {
+      "stock_code": "00700",
+      "stock_name": "腾讯控股",
+      "weight": 0.43
+    },
+    {
+      "stock_code": "09988",
+      "stock_name": "阿里巴巴-W",
+      "weight": 0.41
+    },
+    {
+      "stock_code": "603019",
+      "stock_name": "中科曙光",
+      "weight": 0.33
+    },
+    {
+      "stock_code": "300442",
+      "stock_name": "润泽科技",
+      "weight": 0.19
+    },
+    {
+      "stock_code": "000977",
+      "stock_name": "浪潮信息",
+      "weight": 0.17
+    },
+    {
+      "stock_code": "688111",
+      "stock_name": "金山办公",
+      "weight": 0.14
+    },
+    {
+      "stock_code": "000938",
+      "stock_name": "紫光股份",
+      "weight": 0.14
+    },
+    {
+      "stock_code": "002261",
+      "stock_name": "拓维信息",
+      "weight": 0.12
+    }
+  ],
+  "fetched_at": "2026-05-25 22:04:31",
+  "data_source": "eastmoney"
+}

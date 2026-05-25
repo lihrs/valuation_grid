@@ -1,0 +1,32 @@
+{
+  "fund_code": "021398",
+  "fund_name": "广发中证云计算与大数据ETF发起式联接C",
+  "holdings_asof_date": "2025-09-30",
+  "stock_total_weight": 0.0,
+  "parsed_weight": 0.05,
+  "missing_weight": 0,
+  "positions": [
+    {
+      "stock_code": "002396",
+      "stock_name": "星网锐捷",
+      "weight": 0.02
+    },
+    {
+      "stock_code": "603496",
+      "stock_name": "恒为科技",
+      "weight": 0.01
+    },
+    {
+      "stock_code": "600556",
+      "stock_name": "天下秀",
+      "weight": 0.01
+    },
+    {
+      "stock_code": "688232",
+      "stock_name": "新点软件",
+      "weight": 0.01
+    }
+  ],
+  "fetched_at": "2026-05-25 22:04:31",
+  "data_source": "eastmoney"
+}

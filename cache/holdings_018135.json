@@ -1,0 +1,62 @@
+{
+  "fund_code": "018135",
+  "fund_name": "富国中证大数据产业ETF发起式联接C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 0.7,
+  "parsed_weight": 0.59,
+  "missing_weight": 0.11,
+  "positions": [
+    {
+      "stock_code": "603019",
+      "stock_name": "中科曙光",
+      "weight": 0.17
+    },
+    {
+      "stock_code": "600570",
+      "stock_name": "恒生电子",
+      "weight": 0.09
+    },
+    {
+      "stock_code": "688568",
+      "stock_name": "中科星图",
+      "weight": 0.06
+    },
+    {
+      "stock_code": "600588",
+      "stock_name": "用友网络",
+      "weight": 0.05
+    },
+    {
+      "stock_code": "600845",
+      "stock_name": "宝信软件",
+      "weight": 0.04
+    },
+    {
+      "stock_code": "600536",
+      "stock_name": "中国软件",
+      "weight": 0.04
+    },
+    {
+      "stock_code": "603881",
+      "stock_name": "数据港",
+      "weight": 0.04
+    },
+    {
+      "stock_code": "688343",
+      "stock_name": "云天励飞",
+      "weight": 0.04
+    },
+    {
+      "stock_code": "600602",
+      "stock_name": "云赛智联",
+      "weight": 0.03
+    },
+    {
+      "stock_code": "688158",
+      "stock_name": "优刻得",
+      "weight": 0.03
+    }
+  ],
+  "fetched_at": "2026-05-25 22:04:32",
+  "data_source": "eastmoney"
+}

@@ -1,0 +1,27 @@
+{
+  "fund_code": "017854",
+  "fund_name": "易方达云计算ETF联接C",
+  "holdings_asof_date": "2025-09-30",
+  "stock_total_weight": 0.0,
+  "parsed_weight": 0.03,
+  "missing_weight": 0,
+  "positions": [
+    {
+      "stock_code": "603019",
+      "stock_name": "中科曙光",
+      "weight": 0.01
+    },
+    {
+      "stock_code": "688111",
+      "stock_name": "金山办公",
+      "weight": 0.01
+    },
+    {
+      "stock_code": "600570",
+      "stock_name": "恒生电子",
+      "weight": 0.01
+    }
+  ],
+  "fetched_at": "2026-05-25 22:04:31",
+  "data_source": "eastmoney"
+}

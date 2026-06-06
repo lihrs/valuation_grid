@@ -27,13 +27,16 @@
           "amount": 725.76,
           "nav": 2.2227,
           "shares": 326.52,
-          "status": "holding",
+          "status": "sold",
           "note": "补仓",
           "is_supplement": true,
           "peak_nav": 3.5203,
           "peak_date": "2026-05-25",
           "original_amount": 8064.0,
-          "original_shares": 3628.02
+          "original_shares": 3628.02,
+          "sell_date": "2026-05-26",
+          "sell_nav": 3.3876,
+          "sell_shares": 326.52
         },
         {
           "id": "b20260522a",
@@ -50,7 +53,7 @@
         }
       ],
       "supplement_count": 1,
-      "cooldown_until": "2026-05-26",
+      "cooldown_until": "2026-05-30",
       "watch_note": "空仓待建仓",
       "vol_sensitivity": 0.9,
       "sell_records": [
@@ -121,9 +124,26 @@
           "hold_days": 66,
           "sell_fee_rate": 0.0,
           "note": "补仓"
+        },
+        {
+          "id": "s20260526a",
+          "batch_id": "b20260317a",
+          "sell_date": "2026-05-26",
+          "sell_shares": 326.52,
+          "buy_nav": 2.2227,
+          "sell_nav": 3.3876,
+          "cost": 725.76,
+          "gross": 1106.12,
+          "fee": 0.0,
+          "net": 1106.12,
+          "profit": 380.36,
+          "profit_pct": 52.4,
+          "hold_days": 70,
+          "sell_fee_rate": 0.0,
+          "note": "补仓"
         }
       ],
-      "cooldown_sell_date": "2026-05-22",
+      "cooldown_sell_date": "2026-05-26",
       "cooldown_trade_days": 2,
       "pending_rebuys": [
         {
@@ -137,7 +157,8 @@
           "source_signal": "改造前历史回补",
           "signal_label": "延迟回补(改造前历史回补)",
           "sell_nav": 2.9278,
-          "status": "pending"
+          "status": "expired",
+          "expired_at": "2026-06-04"
         },
         {
           "id": "rb20260508a",
@@ -177,13 +198,16 @@
           "amount": 467.78,
           "nav": 1.7192,
           "shares": 272.09,
-          "status": "holding",
+          "status": "sold",
           "note": "建仓",
           "is_supplement": false,
-          "peak_nav": 2.5682,
-          "peak_date": "2026-05-26",
+          "peak_nav": 2.7416,
+          "peak_date": "2026-06-04",
           "original_amount": 5197.5,
-          "original_shares": 3023.21
+          "original_shares": 3023.21,
+          "sell_date": "2026-06-05",
+          "sell_nav": 2.6287,
+          "sell_shares": 272.09
         },
         {
           "id": "b20260521a",
@@ -195,8 +219,8 @@
           "note": "延迟回补",
           "is_supplement": false,
           "is_rebuy": false,
-          "peak_nav": 2.5682,
-          "peak_date": "2026-05-26"
+          "peak_nav": 2.7416,
+          "peak_date": "2026-06-04"
         }
       ],
       "supplement_count": 0,
@@ -236,6 +260,23 @@
           "hold_days": 49,
           "sell_fee_rate": 0.0,
           "note": "建仓"
+        },
+        {
+          "id": "s20260605a",
+          "batch_id": "b20260330a",
+          "sell_date": "2026-06-05",
+          "sell_shares": 272.09,
+          "buy_nav": 1.7192,
+          "sell_nav": 2.6287,
+          "cost": 467.78,
+          "gross": 715.24,
+          "fee": 0.0,
+          "net": 715.24,
+          "profit": 247.46,
+          "profit_pct": 52.9,
+          "hold_days": 67,
+          "sell_fee_rate": 0.0,
+          "note": "建仓"
         }
       ],
       "pending_rebuys": [
@@ -264,10 +305,23 @@
           "signal_label": "延迟回补(止盈卖出)",
           "sell_nav": 2.38,
           "status": "pending"
+        },
+        {
+          "id": "rb20260605a",
+          "created_date": "2026-06-05",
+          "expire_date": "2026-07-03",
+          "trigger_nav": 2.5893,
+          "amount": 500.67,
+          "ratio": 0.7,
+          "trend_at_creation": "中期走强",
+          "source_signal": "扭亏强势止盈",
+          "signal_label": "延迟回补(扭亏强势止盈)",
+          "sell_nav": 2.6287,
+          "status": "pending"
         }
       ],
-      "cooldown_until": "2026-05-22",
-      "cooldown_sell_date": "2026-05-18",
+      "cooldown_until": "2026-06-09",
+      "cooldown_sell_date": "2026-06-05",
       "cooldown_trade_days": 2
     },
     "017560__老爸": {
@@ -287,6 +341,20 @@
           "peak_date": "2026-05-26",
           "original_amount": 2706.0,
           "original_shares": 1233.64
+        },
+        {
+          "id": "b20260601a",
+          "buy_date": "2026-06-01",
+          "amount": 449.37,
+          "nav": 3.0099,
+          "shares": 149.3,
+          "status": "holding",
+          "note": "延迟回补触发(折扣81%)",
+          "is_supplement": false,
+          "is_rebuy": true,
+          "from_pending_rebuy": "rb20260515a",
+          "peak_nav": 3.213,
+          "peak_date": "2026-06-04"
         }
       ],
       "supplement_count": 0,
@@ -360,7 +428,9 @@
           "source_signal": "止盈卖出",
           "signal_label": "延迟回补(止盈卖出)",
           "sell_nav": 3.0687,
-          "status": "pending"
+          "status": "triggered",
+          "triggered_at": "2026-06-01",
+          "triggered_batch_id": "b20260601a"
         },
         {
           "id": "rb20260518a",
@@ -403,8 +473,8 @@
           "status": "holding",
           "note": "温和回调建仓",
           "is_supplement": false,
-          "peak_nav": 2.5682,
-          "peak_date": "2026-05-26",
+          "peak_nav": 2.7416,
+          "peak_date": "2026-06-04",
           "original_amount": 2598.75,
           "original_shares": 1511.6
         },
@@ -418,8 +488,22 @@
           "note": "延迟回补",
           "is_supplement": false,
           "is_rebuy": false,
-          "peak_nav": 2.5682,
-          "peak_date": "2026-05-26"
+          "peak_nav": 2.7416,
+          "peak_date": "2026-06-04"
+        },
+        {
+          "id": "b20260601a",
+          "buy_date": "2026-06-01",
+          "amount": 139.24,
+          "nav": 2.4806,
+          "shares": 56.13,
+          "status": "holding",
+          "note": "延迟回补触发(延迟回补(扭亏止盈卖出))",
+          "is_supplement": false,
+          "is_rebuy": true,
+          "from_pending_rebuy": "rb20260529a",
+          "peak_nav": 2.7388,
+          "peak_date": "2026-06-04"
         }
       ],
       "supplement_count": 0,
@@ -490,12 +574,40 @@
           "signal_label": "延迟回补(止盈卖出)",
           "sell_nav": 2.38,
           "status": "pending"
+        },
+        {
+          "id": "rb20260529a",
+          "created_date": "2026-05-29",
+          "expire_date": "2026-06-26",
+          "trigger_nav": 2.5479,
+          "amount": 172.43,
+          "ratio": 0.7,
+          "trend_at_creation": "中期走强",
+          "source_signal": "扭亏止盈卖出",
+          "signal_label": "延迟回补(扭亏止盈卖出)",
+          "sell_nav": 2.5867,
+          "status": "triggered",
+          "triggered_at": "2026-06-01",
+          "triggered_batch_id": "b20260601a"
+        },
+        {
+          "id": "rb20260605a",
+          "created_date": "2026-06-05",
+          "expire_date": "2026-07-03",
+          "trigger_nav": 2.5893,
+          "amount": 250.33,
+          "ratio": 0.7,
+          "trend_at_creation": "中期走强",
+          "source_signal": "扭亏强势止盈",
+          "signal_label": "延迟回补(扭亏强势止盈)",
+          "sell_nav": 2.6287,
+          "status": "pending"
         }
       ]
     }
   },
   "cash_reserve_ratio": 0.3,
-  "updated_at": "2026-05-26 00:15:03",
+  "updated_at": "2026-06-05 22:25:51",
   "market_regime": "neutral",
   "regime_auto": true,
   "regime_auto_result": "neutral",

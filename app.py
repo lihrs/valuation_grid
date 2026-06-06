@@ -203,11 +203,15 @@ def post_holdings_refresh():
 # ============================================================
 
 @app.get("/v1/export/images")
-def export_images():
+def export_images(mode: str = "valuation"):
     """批量导出所有板块估值图片（等同于前端"批量导出"按钮）。
     返回 [{sector, filename, image_base64}, ...]
-    OpenClaw agent 可直接使用 image_base64 发送图片消息。"""
-    results = export_all_sector_images()
+    OpenClaw agent 可直接使用 image_base64 发送图片消息。
+    
+    Query params:
+        mode: "valuation" (盘中估值，默认) 或 "nav" (收盘净值，无置信度过滤)
+    """
+    results = export_all_sector_images(mode=mode)
     if not results:
         return {"images": [], "message": "没有可导出的板块"}
     return {"images": results, "count": len(results)}

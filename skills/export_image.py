@@ -70,21 +70,27 @@ def render_sector_image(
     funds: list,
     valuations: dict,
     scale: int = 2,
+    mode: str = "valuation",
 ) -> bytes:
     """
     渲染单个板块的估值图片（PNG bytes）。
     参数与前端 exportSectorImage 一一对应：
       - funds: [{code, alias}, ...]
       - valuations: {code: {estimation_change, week_change, month_change, ...}, ...}
+      - mode: "valuation" (盘中估值，有置信度过滤) 或 "nav" (收盘净值，无过滤)
     """
-    # --- 筛选 + 排序（与前端完全一致）---
+    # --- 筛选 + 排序 ---
     sorted_funds = []
     for f in funds:
         code = f.get("code", "")
         v = valuations.get(code)
         if not v:
             continue
-        # 净值来源直接输出
+        if mode == "nav":
+            # 收盘净值模式：所有有数据的基金都输出，不过滤置信度
+            sorted_funds.append(f)
+            continue
+        # 估值模式（默认）：净值来源直接输出
         if v.get("_source") == "nav":
             sorted_funds.append(f)
             continue
@@ -148,7 +154,9 @@ def render_sector_image(
     draw.text((col_code_l * S, th_y), "代码", fill=COLOR_TH, font=font_th)
     draw.text((col_name_l * S, th_y), "基金名称", fill=COLOR_TH, font=font_th)
 
-    for label, right_x in [("估值涨幅", col_change_r), ("近5日", col_5day_r), ("近20日", col_20day_r)]:
+    # 第一列表头根据模式切换：盘中=估值涨幅，收盘=收盘净值
+    change_label = "收盘净值" if mode == "nav" else "估值涨幅"
+    for label, right_x in [(change_label, col_change_r), ("近5日", col_5day_r), ("近20日", col_20day_r)]:
         tw = draw.textlength(label, font=font_th)
         draw.text((right_x * S - tw, th_y), label, fill=COLOR_TH, font=font_th)
 
@@ -202,11 +210,14 @@ def render_sector_image(
     return buf.getvalue()
 
 
-def export_all_sector_images() -> list:
+def export_all_sector_images(mode: str = "valuation") -> list:
     """
     批量导出所有板块估值图片。
     返回: [{"sector": name, "filename": ..., "image_base64": ...}, ...]
     功能等同于前端 exportAllSectorImages()。
+    
+    Args:
+        mode: "valuation" (盘中估值模式) 或 "nav" (收盘净值模式，无置信度过滤)
     """
     state = load_state()
     sectors = state.get("sectors", [])
@@ -238,7 +249,7 @@ def export_all_sector_images() -> list:
             continue
 
         name = sector.get("name", "未命名")
-        png_bytes = render_sector_image(name, funds, valuations)
+        png_bytes = render_sector_image(name, funds, valuations, mode=mode)
         if not png_bytes:
             continue
 

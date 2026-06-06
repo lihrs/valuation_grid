@@ -29,6 +29,8 @@ import calendar
 
 
 API_URL = "http://localhost:8000/v1/export/images"
+# 支持 mode 参数：valuation (盘中估值) 或 nav (收盘净值)
+API_MODE = "valuation"  # 默认值，可通过 --nav 覆盖
 TIMEOUT = 120  # 秒
 BACKEND_DIR = r"E:\Git\valuation_grid"
 BACKEND_PORT = 8000
@@ -167,16 +169,20 @@ def is_valid_execution_time():
     """
 
 
-def fetch_images():
+def fetch_images(mode="valuation"):
     """
     Fetch valuation images from the FastAPI backend.
+    
+    Args:
+        mode: "valuation" (盘中估值) 或 "nav" (收盘净值)
     
     Returns:
         dict: API response data or error dict
     """
     try:
+        url = f"{API_URL}?mode={mode}"
         req = urllib.request.Request(
-            API_URL,
+            url,
             headers={
                 'Accept': 'application/json',
                 'User-Agent': 'OpenClaw-Valuation-Export/1.0'
@@ -244,7 +250,7 @@ def decode_and_save_images(images_data):
     return saved_images
 
 
-def export_valuation_images(skip_time_check=False, auto_start_backend=True):
+def export_valuation_images(skip_time_check=False, auto_start_backend=True, mode="valuation"):
     """
     Main export function.
     
@@ -254,6 +260,7 @@ def export_valuation_images(skip_time_check=False, auto_start_backend=True):
     Args:
         skip_time_check: If True, skip time window validation (for testing)
         auto_start_backend: If True, automatically start backend if not running
+        mode: "valuation" (盘中估值模式) 或 "nav" (收盘净值模式，无置信度过滤)
     
     Returns:
         dict: {"success": bool, "count": int, "images": [...]}
@@ -273,7 +280,7 @@ def export_valuation_images(skip_time_check=False, auto_start_backend=True):
             return backend_status
     
     # Fetch images from API
-    fetch_result = fetch_images()
+    fetch_result = fetch_images(mode=mode)
     
     if not fetch_result["success"]:
         return fetch_result
@@ -306,16 +313,22 @@ if __name__ == "__main__":
     # Check for --test flag to skip time check
     skip_time_check = "--test" in sys.argv
     
+    # Check for --nav flag for closing NAV mode
+    nav_mode = "--nav" in sys.argv
+    mode = "nav" if nav_mode else "valuation"
+    
     print("=" * 50)
     print("基金估值图片导出工具")
     print("=" * 50)
     print(f"当前时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"测试模式：{'是' if skip_time_check else '否'}")
+    print(f"导出模式：{'收盘净值 (nav)' if nav_mode else '盘中估值 (valuation)'}")
     print("-" * 50)
     
     result = export_valuation_images(
         skip_time_check=skip_time_check,
-        auto_start_backend=True
+        auto_start_backend=True,
+        mode=mode
     )
     
     print("-" * 50)

@@ -1,6 +1,6 @@
 {
   "fund_code": "019059",
-  "fund_name": "易方达中证绿色电力ETF联接发起式C",
+  "fund_name": "易方达绿色电力ETF联接C",
   "holdings_asof_date": "2026-03-31",
   "stock_total_weight": 99.61,
   "parsed_weight": 50.45,
@@ -57,7 +57,7 @@
       "weight": 2.49
     }
   ],
-  "fetched_at": "2026-05-07 23:14:40",
+  "fetched_at": "2026-06-04 14:02:37",
   "data_source": "eastmoney",
   "original_fund_code": "019059",
   "etf_target": "562960",

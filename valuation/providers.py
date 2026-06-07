@@ -382,9 +382,9 @@ def get_holdings(fund_code: str, force_refresh: bool = False) -> dict:
 # 行情 Provider
 # ============================================================
 
-def _convert_to_sina_symbol(stock_code: str) -> str:
+def _convert_to_tencent_symbol(stock_code: str) -> str:
     if len(stock_code) == 5:
-        # 港股代码（5位），新浪格式为 hk + 5位代码
+        # 港股代码（5位），腾讯格式为 hk + 5位代码
         return f"hk{stock_code}"
     if stock_code.startswith(("6", "5", "9")):
         return f"sh{stock_code}"
@@ -392,6 +392,10 @@ def _convert_to_sina_symbol(stock_code: str) -> str:
 
 
 def _fetch_quotes_batch_sina(tickers: List[str]) -> Dict[str, dict]:
+    """通过腾讯行情接口 qt.gtimg.cn 批量获取实时涨跌幅
+    新浪 hq.sinajs.cn 对云服务器 IP 返回 403，腾讯接口无此限制
+    腾讯响应格式: v_sh600000="1~名称~代码~现价~昨收~..."  字段用 ~ 分隔
+    """
     if not tickers:
         return {}
 
@@ -400,11 +404,10 @@ def _fetch_quotes_batch_sina(tickers: List[str]) -> Dict[str, dict]:
 
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i:i+batch_size]
-        symbols = [_convert_to_sina_symbol(t) for t in batch]
-        url = f"https://hq.sinajs.cn/list={','.join(symbols)}"
+        symbols = [_convert_to_tencent_symbol(t) for t in batch]
+        url = f"http://qt.gtimg.cn/q={','.join(symbols)}"
         headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Referer": "https://finance.sina.com.cn"
+            "User-Agent": "Mozilla/5.0"
         }
 
         try:
@@ -417,35 +420,30 @@ def _fetch_quotes_batch_sina(tickers: List[str]) -> Dict[str, dict]:
                     content = raw.decode("utf-8", errors="replace")
 
             now = datetime.now()
-            for line in content.strip().split("\n"):
-                # A股: var hq_str_sh600000="..." 或 var hq_str_sz000001="..."
-                # 港股: var hq_str_hk09896="..."
-                match = re.match(r'var hq_str_((?:s[hz]\d{6})|(?:hk\d{5}))="([^"]*)"', line)
+            for line in content.strip().split(";"):
+                line = line.strip()
+                if not line:
+                    continue
+                # A股: v_sh600000="1~浦发银行~600000~13.68~13.45~..."
+                # 港股: v_hk09896="1~阿里巴巴~09896~83.20~..."
+                match = re.match(r'v_((?:s[hz]\d{6})|(?:hk\d{5}))="([^"]*)"', line)
                 if not match:
                     continue
                 symbol, data_str = match.groups()
                 if not data_str:
                     continue
-                data = data_str.split(",")
+                data = data_str.split("~")
 
                 is_hk = symbol.startswith("hk")
                 stock_code = symbol[2:]
 
                 try:
-                    if is_hk:
-                        # 港股新浪格式: 名称,开盘价,昨收,最高,最低,现价,...
-                        if len(data) < 6:
-                            continue
-                        current = float(data[6]) if data[6] else 0
-                        yesterday = float(data[3]) if data[3] else 0
-                        name = data[1]
-                    else:
-                        # A股格式: 名称,今开,昨收,现价,...
-                        if len(data) < 4:
-                            continue
-                        current = float(data[3]) if data[3] else 0
-                        yesterday = float(data[2]) if data[2] else 0
-                        name = data[0]
+                    # 腾讯格式统一: [1]=名称, [3]=现价, [4]=昨收
+                    if len(data) < 5:
+                        continue
+                    name = data[1]
+                    current = float(data[3]) if data[3] else 0
+                    yesterday = float(data[4]) if data[4] else 0
 
                     pct = round((current - yesterday) / yesterday * 100, 2) if yesterday > 0 and current > 0 else 0.0
                     all_results[stock_code] = {

@@ -4,8 +4,9 @@ app.py - API入口：/state + /valuation + /fund/name + /position + /strategy
 import threading
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -72,6 +73,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Private Network Access（PNA）：允许公网页面访问本地回环服务
+@app.middleware("http")
+async def pna_middleware(request: Request, call_next):
+    if request.method == "OPTIONS" and request.headers.get(
+        "Access-Control-Request-Private-Network"
+    ):
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Private-Network": "true",
+            },
+        )
+    response = await call_next(request)
+    return response
 
 # ============================================================
 # 数据模型

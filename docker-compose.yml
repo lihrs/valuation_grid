@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  valuation-grid:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: valuation-grid
+    ports:
+      - "8000:8000"
+    volumes:
+      # 持久化缓存和状态数据，避免容器重启后丢失
+      - ./cache:/app/cache
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

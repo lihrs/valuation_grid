@@ -26,8 +26,19 @@
 ## 快速启动
 
 ```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# macOS/Linux
+source venv/bin/activate
+
+pip install -r requirements.txt
+
 # 1. 安装依赖
 pip install fastapi uvicorn pydantic requests
+
 
 # 2. 启动服务
 python app.py

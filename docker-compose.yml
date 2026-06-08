@@ -8,10 +8,15 @@ services:
     container_name: valuation-grid
     ports:
       - "8000:8000"
+    environment:
+      # 同步系统时区，使用 Asia/Shanghai（可通过 .env 中的 TZ 变量覆盖）
+      - TZ=${TZ:-Asia/Shanghai}
     volumes:
       # 持久化缓存和状态数据，避免容器重启后丢失
       - ./cache:/app/cache
       - ./data:/app/data
+      # 同步宿主机时间（Docker Desktop / Linux 主机均支持）
+      - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]

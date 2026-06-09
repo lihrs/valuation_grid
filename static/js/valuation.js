@@ -415,7 +415,7 @@ function renderFundRow(fund, sectorIndex, fundIndex) {
             <td class="td-confidence">${confidence}</td>
             <td class="td-action" style="white-space:nowrap;">
                 ${etfBtn}
-                <button onclick="addToStrategy('${fund.code}')" title="加入低频网格" style="color:#10b981;">📌</button>
+                <button onclick="addToStrategy('${fund.code}', '${(displayName || '').replace(/'/g, "\\'")}')" title="加入低频网格" style="color:#10b981;">📌</button>
                 <button onclick="showMoveFundModal(${sectorIndex}, ${fundIndex})" title="移动到其他板块" style="color:#6366f1;">↗</button>
                 <button onclick="deleteFund(${sectorIndex}, ${fundIndex})" title="删除">×</button>
             </td>
@@ -424,9 +424,10 @@ function renderFundRow(fund, sectorIndex, fundIndex) {
 }
 
 // ============ 加入策略持仓（跳转到策略页面） ============
-async function addToStrategy(fundCode) {
-    // 跳转到策略页面并带上参数
-    window.location.href = `strategy.html?addFund=${fundCode}`;
+async function addToStrategy(fundCode, displayName) {
+    // 跳转到策略页面并带上参数（包括基金名称）
+    const encodedName = displayName ? encodeURIComponent(displayName) : '';
+    window.location.href = `strategy.html?addFund=${fundCode}${encodedName ? '&name=' + encodedName : ''}`;
 }
 
 // ============ 导出图片（实时估值板块） ============

@@ -759,7 +759,7 @@ async function submitSetOwner(oldKey, newOwner) {
     }
 }
 
-function showBuyModal(fundCode, owner) {
+function showBuyModal(fundCode, owner, fundNameHint) {
     // fundCode 可能是复合键 "017193__老公"，也可能是纯代码 "017193"
     let realCode = fundCode;
     let ownerTag = owner || '';
@@ -782,7 +782,7 @@ function showBuyModal(fundCode, owner) {
     delete _modal.dataset.pendingRebuyId;
 
     const val = valuations[realCode];
-    const name = val?.fund_name || realCode;
+    const name = fundNameHint || val?.fund_name || realCode;
     const ownerLabel = ownerTag ? ` [${ownerTag}]` : '';
     document.getElementById('buyModalTitle').textContent = `录入买入 · ${name}${ownerLabel}`;
 
@@ -1623,9 +1623,10 @@ window.onload = async () => {
     // 检查URL参数，是否从估值页面跳转过来添加基金
     const urlParams = new URLSearchParams(window.location.search);
     const addFundCode = urlParams.get('addFund');
+    const fundName = urlParams.get('name');
     if (addFundCode) {
         // 延迟打开买入弹窗，等待页面加载完成
-        setTimeout(() => showBuyModal(addFundCode), 500);
+        setTimeout(() => showBuyModal(addFundCode, null, fundName), 500);
     }
     // 加载策略面板
     await loadRegimeStatus();

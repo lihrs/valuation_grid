@@ -784,17 +784,30 @@ def get_recommendations(req: RecommendationRequest = None):
 
 # 静态文件服务（real-time.html 等）
 _base_dir = Path(__file__).parent
+_pages_dir = _base_dir / "pages"
 app.mount("/static", StaticFiles(directory=_base_dir / "static"), name="static")
 
-# 通配符路由：访问任意 .html 文件
+# 通配符路由：访问任意 .html 文件（优先从pages目录查找，再从根目录查找）
 @app.get("/{filename:path}.html")
 def serve_html(filename: str):
-    """访问任意 HTML 文件，如 /real-time.html, /strategy.html, /recommend.html"""
-    file_path = _base_dir / f"{filename}.html"
-    if not file_path.exists():
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Page not found")
-    return FileResponse(file_path, media_type="text/html")
+    """访问任意 HTML 文件，如 /real-time.html, /strategy.html, /recommend.html
+
+    查找顺序：
+    1. pages/{filename}.html
+    2. {filename}.html（根目录）
+    """
+    # 优先从pages目录查找
+    pages_path = _pages_dir / f"{filename}.html"
+    if pages_path.exists():
+        return FileResponse(pages_path, media_type="text/html")
+
+    # 再从根目录查找
+    root_path = _base_dir / f"{filename}.html"
+    if root_path.exists():
+        return FileResponse(root_path, media_type="text/html")
+
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404, detail="Page not found")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

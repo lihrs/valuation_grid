@@ -2,9 +2,7 @@
 
 // 状态管理
 let state = { version: 1, sectors: [] };
-let autoRefreshTimer = null;
 let isRefreshing = false;
-let lastRefreshTime = null;
 
 // ============ API 调用 ============
 async function loadState() {
@@ -60,7 +58,7 @@ async function refreshAll() {
         });
 
         render();
-        lastRefreshTime = new Date();
+        setLastRefreshTime(new Date());
         document.getElementById('updateTime').textContent =
             `更新于 ${lastRefreshTime.toLocaleTimeString()}`;
     } catch (e) {
@@ -229,61 +227,6 @@ async function clearEtfLink() {
     } catch (e) {
         showStatus('清除失败', 'error');
     }
-}
-
-// ============ 自动刷新（交易时段感知） ============
-function isTradeTime() {
-    const now = new Date();
-    const day = now.getDay();
-    if (day === 0 || day === 6) return false;
-    const hhmm = now.getHours() * 100 + now.getMinutes();
-    // 9:15~11:35 和 12:55~15:05（留缓冲）
-    return (hhmm >= 915 && hhmm <= 1135) || (hhmm >= 1255 && hhmm <= 1505);
-}
-
-function startAutoRefresh() {
-    if (autoRefreshTimer) return;
-    _scheduleNextRefresh();
-    updateRefreshTimer();
-}
-
-function _scheduleNextRefresh() {
-    if (autoRefreshTimer) clearTimeout(autoRefreshTimer);
-    const interval = isTradeTime() ? 30000 : 300000; // 交易时段30s，非交易5min
-    autoRefreshTimer = setTimeout(() => {
-        if (state.sectors.some(s => s.funds.length > 0)) {
-            refreshAll();
-        }
-        _scheduleNextRefresh();
-    }, interval);
-}
-
-function updateRefreshTimer() {
-    const el = document.getElementById('refreshTimer');
-    const dot = document.querySelector('.refresh-status .dot');
-    if (!el) return;
-
-    const trading = isTradeTime();
-
-    if (trading) {
-        if (dot) dot.style.background = '#10b981';
-        if (lastRefreshTime) {
-            const ago = Math.floor((Date.now() - lastRefreshTime) / 1000);
-            el.textContent = `${ago}s前更新 · 30s刷新`;
-        } else {
-            el.textContent = '🟢 30s自动刷新中';
-        }
-    } else {
-        if (dot) dot.style.background = '#9ca3af';
-        if (lastRefreshTime) {
-            const ago = Math.floor((Date.now() - lastRefreshTime) / 1000);
-            const agoText = ago < 60 ? `${ago}s` : `${Math.floor(ago/60)}m`;
-            el.textContent = `⏸ 非交易时段 · ${agoText}前更新`;
-        } else {
-            el.textContent = '⏸ 非交易时段';
-        }
-    }
-    setTimeout(updateRefreshTimer, 1000);
 }
 
 // ============ 渲染界面（估值看板） ============
@@ -604,7 +547,11 @@ window.onload = async () => {
     if (state.sectors.some(s => s.funds.length > 0)) {
         await refreshAll();
     }
-    startAutoRefresh();
+    startAutoRefresh(() => {
+        if (state.sectors.some(s => s.funds.length > 0)) {
+            refreshAll();
+        }
+    });
 };
 
 // 回车/ESC 键处理

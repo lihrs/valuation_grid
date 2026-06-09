@@ -115,3 +115,64 @@ async function getFundName(code) {
         return '';
     }
 }
+
+// ============ 自动刷新（交易时段感知） ============
+let autoRefreshTimer = null;
+let lastRefreshTime = null;
+
+function isTradeTime() {
+    const now = new Date();
+    const day = now.getDay();
+    if (day === 0 || day === 6) return false;
+    const hhmm = now.getHours() * 100 + now.getMinutes();
+    // 9:15~11:35 和 12:55~15:05（留缓冲）
+    return (hhmm >= 915 && hhmm <= 1135) || (hhmm >= 1255 && hhmm <= 1505);
+}
+
+function startAutoRefresh(refreshCallback) {
+    if (autoRefreshTimer) return;
+
+    function scheduleNextRefresh() {
+        if (autoRefreshTimer) clearTimeout(autoRefreshTimer);
+        const interval = isTradeTime() ? 30000 : 300000; // 交易时段30s，非交易5min
+        autoRefreshTimer = setTimeout(() => {
+            if (refreshCallback) refreshCallback();
+            scheduleNextRefresh();
+        }, interval);
+    }
+
+    scheduleNextRefresh();
+    updateRefreshTimer();
+}
+
+function updateRefreshTimer() {
+    const el = document.getElementById('refreshTimer');
+    const dot = document.querySelector('.refresh-status .dot');
+    if (!el) return;
+
+    const trading = isTradeTime();
+
+    if (trading) {
+        if (dot) dot.style.background = '#10b981';
+        if (lastRefreshTime) {
+            const ago = Math.floor((Date.now() - lastRefreshTime) / 1000);
+            el.textContent = `${ago}s前更新 · 30s刷新`;
+        } else {
+            el.textContent = '🟢 30s自动刷新中';
+        }
+    } else {
+        if (dot) dot.style.background = '#9ca3af';
+        if (lastRefreshTime) {
+            const ago = Math.floor((Date.now() - lastRefreshTime) / 1000);
+            const agoText = ago < 60 ? `${ago}s` : `${Math.floor(ago/60)}m`;
+            el.textContent = `⏸ 非交易时段 · ${agoText}前更新`;
+        } else {
+            el.textContent = '⏸ 非交易时段';
+        }
+    }
+    setTimeout(updateRefreshTimer, 1000);
+}
+
+function setLastRefreshTime(time) {
+    lastRefreshTime = time;
+}

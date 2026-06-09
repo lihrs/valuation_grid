@@ -656,6 +656,7 @@ async function loadStrategyPanel() {
             return html;
         }
         panel.innerHTML = html;
+        setLastRefreshTime(new Date());
     } catch (e) {
         panel.innerHTML = `<div style="text-align:center;padding:20px;color:#ef4444;">加载失败: ${e.message}</div>`;
     }
@@ -1631,6 +1632,10 @@ window.onload = async () => {
     // 加载策略面板
     await loadRegimeStatus();
     await loadStrategyPanel();
+    // 启动自动刷新（刷新策略面板）
+    startAutoRefresh(() => {
+        loadStrategyPanel();
+    });
 };
 
 // 回车/ESC 键处理（策略页面）

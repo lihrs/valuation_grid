@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时估值 · 低频网格工具</title>
+    <link rel="stylesheet" href="static/css/common.css">
+</head>
+<body>
+    <div class="container">
+
+        <div class="toolbar">
+            <div class="refresh-status">
+                <span class="dot"></span>
+                <span id="refreshTimer">自动刷新中</span>
+            </div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <!-- 导航栏 -->
+        <div class="nav-bar">
+            <a href="real-time.html" class="nav-btn active">实时估值</a>
+            <a href="strategy.html" class="nav-btn">低频网格</a>
+            <a href="recommend.html" class="nav-btn">💡 推荐买入</a>
+        </div>
+
+        <!-- 估值看板 -->
+        <div id="tab-valuation">
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+                <button class="btn-primary" onclick="refreshAll()" id="refreshBtn">🔄 刷新</button>
+                <button class="btn-success" onclick="showAddSectorModal()">➕ 新建板块</button>
+                <button class="btn-warning" onclick="exportAllSectorImages()">📷 批量导出</button>
+            </div>
+            <div id="sectors"></div>
+        </div>
+
+        <div class="update-time" id="updateTime"></div>
+    </div>
+
+    <!-- 新建板块弹窗 -->
+    <div class="modal" id="addSectorModal">
+        <div class="modal-content">
+            <h3>新建板块</h3>
+            <input type="text" id="newSectorName" placeholder="输入板块名称，如：有色金属">
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('addSectorModal')">取消</button>
+                <button class="btn-primary" onclick="addSector()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ETF映射弹窗 -->
+    <div class="modal" id="etfLinkModal">
+        <div class="modal-content">
+            <h3>设置ETF联接穿透</h3>
+            <p style="font-size:12px;color:#666;margin-bottom:12px;">
+                对于ETF联接基金，可指定目标ETF以获取准确持仓
+            </p>
+            <input type="text" id="etfLinkCode" placeholder="联接基金代码（如016708）" maxlength="6" readonly>
+            <input type="text" id="etfTargetCode" placeholder="目标ETF代码（如516650）" maxlength="6">
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('etfLinkModal')">取消</button>
+                <button class="btn-secondary" onclick="clearEtfLink()" style="color:#ef4444;">清除映射</button>
+                <button class="btn-primary" onclick="saveEtfLink()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动基金弹窗 -->
+    <div class="modal" id="moveFundModal">
+        <div class="modal-content">
+            <h3 id="moveFundTitle">移动基金到板块</h3>
+            <div id="moveFundList" style="max-height:300px;overflow-y:auto;"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('moveFundModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 净值历史弹窗 -->
+    <div class="modal" id="navHistoryModal">
+        <div class="modal-content wide">
+            <h3 id="navHistoryTitle">净值历史</h3>
+            <div class="nav-history-scroll" id="navHistoryBody">
+                <p style="text-align:center;color:#9ca3af;padding:20px;">加载中...</p>
+            </div>
+            <div class="modal-actions" style="margin-top:12px;">
+                <button class="btn-secondary" onclick="closeModal('navHistoryModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/common.js"></script>
+    <script src="static/js/valuation.js"></script>
+</body>
+</html>

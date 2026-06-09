@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>低频网格 · 低频网格工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="static/css/common.css">
+    <style>
+        /* ========== 策略面板 ========== */
+        .strategy-panel { margin-top: 4px; }
+
+        /* ========== v5.17: 行情模式（紧凑内联） ========== */
+        .regime-inline { display: inline-flex; align-items: center; gap: 4px; margin: 0 8px; }
+        .regime-inline .ri-btn {
+            padding: 2px 8px; border: 1.5px solid #e2e8f0; border-radius: 4px;
+            background: #fff; cursor: pointer; font-size: 11px; transition: .15s;
+        }
+        .regime-inline .ri-btn:hover { border-color: #94a3b8; }
+        .regime-inline .ri-btn.active-neutral { border-color: #6366f1; background: #eef2ff; color: #4f46e5; font-weight: 600; }
+        .regime-inline .ri-btn.active-bear { border-color: #10b981; background: #ecfdf5; color: #059669; font-weight: 600; }
+        .regime-auto-badge {
+            font-size: 10px; padding: 1px 6px; border-radius: 3px;
+            background: #e0e7ff; color: #4338ca; font-weight: 500; cursor: pointer;
+        }
+        .regime-auto-badge.manual { background: #fef3c7; color: #92400e; }
+        .fitness-badge {
+            display: inline-block; font-size: 10px; padding: 1px 5px;
+            border-radius: 3px; font-weight: 600; margin-left: 4px;
+        }
+        .fitness-badge.grade-A { background: #d1fae5; color: #059669; }
+        .fitness-badge.grade-B { background: #dbeafe; color: #2563eb; }
+        .fitness-badge.grade-C { background: #fef3c7; color: #d97706; }
+        .fitness-badge.grade-D { background: #fed7aa; color: #ea580c; }
+        .fitness-badge.grade-E { background: #fecaca; color: #dc2626; }
+
+        .signal-card {
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+            overflow: hidden;
+        }
+        .signal-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .signal-card-header .fund-info {
+            font-weight: 600;
+            font-size: 13px;
+            color: #1e293b;
+        }
+        .signal-card-header .fund-info .code {
+            font-family: "SF Mono", Monaco, monospace;
+            color: #4f46e5;
+            cursor: pointer;
+        }
+        .signal-card-header .fund-info .code:hover { text-decoration: underline; }
+
+        .signal-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .signal-badge.sell { background: #fee2e2; color: #dc2626; }
+        .signal-badge.buy { background: #d1fae5; color: #059669; }
+        .signal-badge.hold { background: #f3f4f6; color: #6b7280; }
+        .signal-badge.alert { background: #fef3c7; color: #92400e; }
+
+        .signal-card-body {
+            padding: 10px 14px 6px;
+        }
+        .signal-reason {
+            font-size: 12px;
+            color: #374151;
+            margin-bottom: 4px;
+            line-height: 1.5;
+        }
+        .signal-fee {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .signal-alert {
+            background: #fef3c7;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 11px;
+            color: #92400e;
+            margin-bottom: 4px;
+        }
+
+        .pos-summary {
+            display: flex;
+            flex-wrap: wrap;
+            font-size: 11px;
+            color: #6b7280;
+            padding: 6px 14px;
+            background: #fafbfc;
+            border-top: 1px solid #f1f5f9;
+            justify-content: space-between;
+        }
+        .pos-summary .item { display: flex; gap: 4px; }
+        .pos-summary .label { color: #9ca3af; }
+        .pos-summary .value { font-weight: 600; color: #374151; }
+
+        .pos-batches {
+            padding: 0 14px 6px;
+            overflow-x: auto;
+        }
+        .pos-batches table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            table-layout: fixed;
+        }
+        .pos-batches th {
+            text-align: left;
+            padding: 4px 6px;
+            color: #9ca3af;
+            font-weight: 500;
+            font-size: 10px;
+        }
+        .pos-batches td {
+            padding: 4px 6px;
+            border-top: 1px solid #f5f5f5;
+            color: #374151;
+        }
+        .pos-actions {
+            padding: 6px 14px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .pos-actions button {
+            padding: 5px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all .15s;
+        }
+        .pos-actions button:hover { background: #f3f4f6; }
+        .pos-actions .buy-btn { border-color: #10b981; color: #059669; }
+        .pos-actions .buy-btn:hover { background: #ecfdf5; }
+        .pos-actions .sell-btn { border-color: #ef4444; color: #dc2626; }
+        .pos-actions .sell-btn:hover { background: #fef2f2; }
+
+        /* 行情分析区域 */
+        .market-analysis {
+            padding: 4px 14px 2px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .market-analysis .trend-bar {
+            display: flex;
+            gap: 1px;
+            align-items: stretch;
+            margin-bottom: 2px;
+            position: relative;
+        }
+        .market-analysis .trend-bar .day-bar {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .market-analysis .trend-bar .day-bar .bar-upper {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            width: 100%;
+        }
+        .market-analysis .trend-bar .day-bar .bar-lower {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+        }
+        .market-analysis .trend-bar .day-bar .bar-fill {
+            width: 80%;
+            border-radius: 1px;
+            min-height: 0;
+        }
+        .market-analysis .trend-bar .day-bar .bar-label {
+            font-size: 7px;
+            color: #9ca3af;
+            white-space: nowrap;
+            line-height: 1.1;
+            margin-top: 1px;
+        }
+        .market-analysis .trend-bar .day-bar .bar-value {
+            font-size: 8px;
+            font-weight: 600;
+            white-space: nowrap;
+            line-height: 1.1;
+        }
+        .market-analysis .zero-line {
+            width: 100%;
+            height: 1px;
+            background: #e5e7eb;
+            margin: 0;
+        }
+        .market-stats {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            font-size: 10px;
+            color: #6b7280;
+            padding: 4px 0 4px;
+            justify-content: space-between;
+        }
+        .market-stats .stat-item {
+            display: flex;
+            gap: 3px;
+        }
+        .market-stats .stat-label { color: #9ca3af; }
+        .market-stats .stat-value { font-weight: 600; }
+        .market-stats .stat-value.up { color: #dc2626; }
+        .market-stats .stat-value.down { color: #059669; }
+        .market-stats .stat-value.flat { color: #6b7280; }
+
+        /* 策略说明提示 */
+        .strategy-info-btn {
+            background: none;
+            border: 1px solid #e5e7eb;
+            color: #9ca3af;
+            font-size: 10px;
+            cursor: pointer;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-left: 4px;
+        }
+        .strategy-info-btn:hover { background: #f3f4f6; color: #374151; }
+        .strategy-info-box {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 6px 10px;
+            margin: 4px 0 6px;
+            font-size: 10px;
+            color: #6b7280;
+            line-height: 1.6;
+            display: none;
+        }
+        .strategy-info-box.show { display: block; }
+
+        /* 策略分组 */
+        .strategy-group {
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+            overflow: hidden;
+        }
+        .strategy-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .strategy-group-header .group-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e293b;
+            cursor: pointer;
+        }
+        .strategy-group-header .group-name:hover { color: #4f46e5; }
+        .strategy-group-header .group-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .strategy-group-header .group-actions button {
+            background: none;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 3px 7px;
+            cursor: pointer;
+            font-size: 11px;
+            color: #6b7280;
+            transition: all .15s;
+        }
+        .strategy-group-header .group-actions button:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        .strategy-group-body { padding: 0; }
+        .ungrouped-label {
+            font-size: 12px;
+            color: #9ca3af;
+            padding: 8px 14px 4px;
+        }
+
+        /* 无持仓基金快速添加 */
+        .add-position-bar {
+            background: #fff;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .add-position-bar input {
+            padding: 6px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+            width: 90px;
+        }
+        .add-position-bar input:focus { border-color: #4f46e5; }
+        .add-position-bar span { font-size: 12px; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/real-time.html" class="back-link">← 返回估值页面</a>
+        <a href="/recommend.html" style="float:right;color:#10b981;font-size:13px;text-decoration:none;">💡 推荐买入</a>
+
+        <h1>📡 低频网格</h1>
+
+        <div class="status" id="status"></div>
+
+        <!-- 策略面板 -->
+        <div class="strategy-panel" id="strategyPanel">
+            <div class="empty">
+                <div class="empty-icon">📡</div>
+                <p>点击"刷新信号"获取策略建议</p>
+            </div>
+        </div>
+
+        <div class="update-time" id="updateTime"></div>
+    </div>
+
+    <!-- 买入弹窗 -->
+    <div class="modal" id="buyModal">
+        <div class="modal-content">
+            <h3 id="buyModalTitle">录入买入</h3>
+            <div class="trade-form">
+                <div>
+                    <label>买入日期</label>
+                    <input type="date" id="buyDate">
+                    <div class="hint">下单日期（影响持有天数和费率计算）</div>
+                </div>
+                <div>
+                    <label>买入金额（元）</label>
+                    <input type="number" id="buyAmount" placeholder="支付宝显示的买入金额（填0=空仓观察）" step="100">
+                    <div class="hint" style="color:#6366f1;">💡 金额填0：加入空仓观察，策略引擎将提供建仓时机建议</div>
+                </div>
+                <div>
+                    <label>确认净值（选填）</label>
+                    <input type="number" id="buyNav" placeholder="份额确认后补录，可先留空" step="0.0001">
+                    <div class="hint" id="buyNavHint">净值通常T+1确认，可先留空后续补录</div>
+                </div>
+                <div>
+                    <label>备注（可选）</label>
+                    <input type="text" id="buyNote" placeholder="方便自己回忆，如：大跌抄底、补仓、定投">
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="buySupplement" style="width:auto;margin:0;">
+                    <label for="buySupplement" style="font-weight:400;color:#6b7280;font-size:12px;">补仓买入（计入补仓次数，备注以"补仓"开头也会自动识别）</label>
+                </div>
+            </div>
+            <input type="hidden" id="buyFundCode">
+            <input type="hidden" id="buyOwner">
+            <div class="modal-actions" style="margin-top:12px;">
+                <button class="btn-secondary" onclick="closeModal('buyModal')">取消</button>
+                <button class="btn-success" onclick="submitBuy()">确认录入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 卖出弹窗 -->
+    <div class="modal" id="sellModal">
+        <div class="modal-content">
+            <h3 id="sellModalTitle">录入卖出</h3>
+            <div class="trade-form">
+                <div>
+                    <label>卖出日期</label>
+                    <input type="date" id="sellDate">
+                    <div class="hint">下单日期（影响持有天数和费率计算）</div>
+                </div>
+                <div id="sellBatchSelectWrap">
+                    <label>卖出批次</label>
+                    <select id="sellBatchSelect" onchange="onSellBatchChange()">
+                        <option value="">请选择...</option>
+                    </select>
+                    <div class="hint" id="sellBatchHint"></div>
+                </div>
+                <div id="sellFifoInfo" style="display:none;">
+                    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 10px;font-size:11px;color:#1e40af;">
+                        <b>FIFO 模式</b>：支付宝按先进先出自动扣减份额，系统将自动按 FIFO 顺序拆分到各批次。
+                        <div id="sellFifoSteps" style="margin-top:4px;"></div>
+                    </div>
+                </div>
+                <div>
+                    <label>卖出份额</label>
+                    <input type="number" id="sellShares" placeholder="支付宝→交易记录中的「卖出份额」" step="0.01">
+                    <div class="hint" id="sellSharesHint"></div>
+                </div>
+                <div>
+                    <label>确认净值（选填）</label>
+                    <input type="number" id="sellNav" placeholder="金额确认后补录，可先留空" step="0.0001">
+                    <div class="hint">卖出金额确认后，在交易记录中查看确认净值</div>
+                </div>
+            </div>
+            <input type="hidden" id="sellFundCode">
+            <input type="hidden" id="sellMode" value="batch">
+            <div class="modal-actions" style="margin-top:12px;">
+                <button class="btn-secondary" onclick="closeModal('sellModal')">取消</button>
+                <button class="btn-danger" onclick="submitSell()">确认卖出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分组管理弹窗 -->
+    <div class="modal" id="groupModal">
+        <div class="modal-content">
+            <h3 id="groupModalTitle">新建分组</h3>
+            <input type="text" id="groupNameInput" placeholder="输入分组名称，如：有色金属">
+            <input type="hidden" id="groupEditId" value="">
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('groupModal')">取消</button>
+                <button class="btn-primary" onclick="saveGroup()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分配基金到分组弹窗 -->
+    <div class="modal" id="assignGroupModal">
+        <div class="modal-content">
+            <h3 id="assignGroupTitle">分配到分组</h3>
+            <div id="assignGroupList" style="max-height:300px;overflow-y:auto;"></div>
+            <div class="modal-actions" style="margin-top:12px;">
+                <button class="btn-secondary" onclick="closeModal('assignGroupModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增模块弹窗（同基金多人持仓） -->
+    <div class="modal" id="addInstanceModal">
+        <div class="modal-content">
+            <h3>新增持仓模块</h3>
+            <p style="font-size:11px;color:#6b7280;margin-bottom:12px;">
+                同一基金可为不同人各自建立独立的持仓和策略跟踪，<br>
+                例如为"老公"和"老婆"分别跟踪 017193。
+            </p>
+            <div class="trade-form">
+                <div>
+                    <label>基金代码</label>
+                    <input type="text" id="instanceFundCode" placeholder="6位基金代码" maxlength="6">
+                </div>
+                <div>
+                    <label>持仓人/标签</label>
+                    <input type="text" id="instanceOwner" placeholder="如：老公、老婆、账户A" maxlength="10">
+                    <div class="hint">用于区分同基金不同人的持仓</div>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top:12px;">
+                <button class="btn-secondary" onclick="closeModal('addInstanceModal')">取消</button>
+                <button class="btn-warning" onclick="submitAddInstance()">创建并录入买入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 灵敏度调整弹窗 -->
+    <div class="modal" id="volSensModal">
+        <div class="modal-content">
+            <h3 id="volSensTitle">调整波动率灵敏度</h3>
+            <p style="font-size:11px;color:#6b7280;margin-bottom:8px;">
+                灵敏度影响买卖阈值的宽窄：<b>&gt;1.0</b> 阈值更宽（更不容易触发），<b>&lt;1.0</b> 阈值更窄（更灵敏）。
+            </p>
+            <div id="volSensInfo" style="font-size:11px;color:#6b7280;margin-bottom:8px;padding:6px 8px;background:#f8fafc;border-radius:4px;"></div>
+            <div class="trade-form">
+                <div>
+                    <label>灵敏度值 (0.5 ~ 1.5)</label>
+                    <input type="range" id="volSensSlider" min="0.5" max="1.5" step="0.05" value="1.0"
+                           oninput="document.getElementById('volSensDisplay').textContent=this.value"
+                           style="width:100%;margin-top:4px;">
+                    <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;">
+                        <span>0.5 灵敏</span>
+                        <span id="volSensDisplay" style="font-weight:600;color:#4f46e5;font-size:13px;">1.00</span>
+                        <span>1.5 迟钝</span>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="volSensFundCode">
+            <div class="modal-actions" style="margin-top:12px;">
+                <button class="btn-secondary" onclick="closeModal('volSensModal')">取消</button>
+                <button class="btn-secondary" onclick="clearVolSensitivity()" style="color:#f59e0b;">恢复自动</button>
+                <button class="btn-secondary" onclick="recalibrateVolSensitivity()" style="color:#4f46e5;">重新校准</button>
+                <button class="btn-primary" onclick="saveVolSensitivity()">手动设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 净值历史弹窗 -->
+    <div class="modal" id="navHistoryModal">
+        <div class="modal-content wide">
+            <h3 id="navHistoryTitle">净值历史</h3>
+            <div class="nav-history-scroll" id="navHistoryBody">
+                <p style="text-align:center;color:#9ca3af;padding:20px;">加载中...</p>
+            </div>
+            <div class="modal-actions" style="margin-top:12px;">
+                <button class="btn-secondary" onclick="closeModal('navHistoryModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/common.js"></script>
+    <script src="static/js/strategy.js"></script>
+</body>
+</html>

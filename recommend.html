@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推荐买入 · 低频网格工具</title>
+    <link rel="stylesheet" href="static/css/common.css">
+    <style>
+        /* ========== 推荐买入面板 ========== */
+        .recommend-panel { margin-top: 4px; }
+        .recommend-filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .recommend-filter-bar select {
+            padding: 5px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 12px;
+            background: #fff;
+            cursor: pointer;
+        }
+        .recommend-filter-bar select:focus { border-color: #4f46e5; outline: none; }
+        .recommend-card {
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+            overflow: hidden;
+            border-left: 4px solid #10b981;
+        }
+        .recommend-card.p1 { border-left-color: #dc2626; }
+        .recommend-card.p2 { border-left-color: #f59e0b; }
+        .recommend-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .recommend-card-header .fund-info {
+            font-weight: 600;
+            font-size: 13px;
+            color: #1e293b;
+        }
+        .recommend-card-header .fund-info .code {
+            font-family: "SF Mono", Monaco, monospace;
+            color: #4f46e5;
+            cursor: pointer;
+        }
+        .recommend-card-header .fund-info .code:hover { text-decoration: underline; }
+        .recommend-signal-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .recommend-signal-badge.dip { background: #fee2e2; color: #dc2626; }
+        .recommend-signal-badge.build { background: #d1fae5; color: #059669; }
+        .recommend-signal-badge.bounce { background: #dbeafe; color: #2563eb; }
+        .recommend-signal-badge.other { background: #f3f4f6; color: #6b7280; }
+        .recommend-card-body { padding: 10px 14px; }
+        .recommend-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+        .recommend-metrics .metric { display: flex; gap: 4px; }
+        .recommend-metrics .metric .label { color: #9ca3af; }
+        .recommend-metrics .metric .value { font-weight: 600; color: #374151; }
+        .recommend-metrics .metric .value.up { color: #dc2626; }
+        .recommend-metrics .metric .value.down { color: #059669; }
+        .recommend-reason {
+            font-size: 12px;
+            color: #374151;
+            margin-bottom: 8px;
+            line-height: 1.5;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            padding: 6px 10px;
+        }
+        .recommend-amount {
+            font-size: 14px;
+            color: #059669;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .recommend-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding-top: 6px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .recommend-actions button {
+            padding: 5px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all .15s;
+        }
+        .recommend-actions button:hover { background: #f3f4f6; }
+        .recommend-actions .buy-btn { border-color: #10b981; color: #059669; }
+        .recommend-actions .buy-btn:hover { background: #ecfdf5; }
+        .recommend-actions .watch-btn { border-color: #6366f1; color: #4f46e5; }
+        .recommend-actions .watch-btn:hover { background: #eef2ff; }
+        .recommend-trend-bar {
+            display: flex;
+            gap: 1px;
+            align-items: stretch;
+            margin: 6px 0;
+            height: 24px;
+        }
+        .recommend-trend-bar .trend-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 9px;
+            border-radius: 2px;
+        }
+        .recommend-trend-bar .trend-item.up { background: #fee2e2; color: #dc2626; }
+        .recommend-trend-bar .trend-item.down { background: #d1fae5; color: #059669; }
+        .recommend-trend-bar .trend-item.flat { background: #f3f4f6; color: #6b7280; }
+        .recommend-trend-bar .trend-item .label { font-weight: 500; }
+        .recommend-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+        .recommend-empty-icon { font-size: 36px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <div class="nav-bar">
+            <a href="real-time.html" class="nav-btn">实时估值</a>
+            <a href="strategy.html" class="nav-btn">低频网格</a>
+            <a href="recommend.html" class="nav-btn active">💡 推荐买入</a>
+        </div>
+
+        <h1>💡 推荐买入列表</h1>
+
+        <div class="status" id="status"></div>
+
+        <div class="recommend-panel" id="recommendPanel">
+            <div class="recommend-empty">
+                <div class="recommend-empty-icon">💡</div>
+                <p>点击"刷新推荐"获取买入机会</p>
+            </div>
+        </div>
+
+        <div class="update-time" id="updateTime"></div>
+    </div>
+
+    <!-- 买入弹窗 -->
+    <div class="modal" id="buyModal">
+        <div class="modal-content">
+            <h3 id="buyModalTitle">录入买入</h3>
+            <div class="trade-form">
+                <div>
+                    <label>买入日期</label>
+                    <input type="date" id="buyDate">
+                    <div class="hint">下单日期（影响持有天数和费率计算）</div>
+                </div>
+                <div>
+                    <label>买入金额（元）</label>
+                    <input type="number" id="buyAmount" placeholder="买入金额" step="100">
+                </div>
+                <div>
+                    <label>确认净值（选填）</label>
+                    <input type="number" id="buyNav" placeholder="份额确认后补录，可先留空" step="0.0001">
+                    <div class="hint">净值通常T+1确认，可先留空后续补录</div>
+                </div>
+                <div>
+                    <label>备注（可选）</label>
+                    <input type="text" id="buyNote" placeholder="方便自己回忆">
+                </div>
+            </div>
+            <input type="hidden" id="buyFundCode">
+            <div class="modal-actions" style="margin-top:12px;">
+                <button class="btn-secondary" onclick="closeModal('buyModal')">取消</button>
+                <button class="btn-success" onclick="submitBuy()">确认录入</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/common.js"></script>
+    <script>
+        // 推荐页面专用变量
+        let recommendData = { recommendations: [], filters: {} };
+        let recommendFilters = { sector: '', signal: '', confidence: '' };
+
+        // ============ 推荐买入面板 ============
+        async function loadRecommendPanel() {
+            const panel = document.getElementById('recommendPanel');
+            panel.innerHTML = '<div style="text-align:center;padding:20px;color:#9ca3af;"><span class="loading"></span>加载推荐中...</div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/v1/recommendations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sector_filter: recommendFilters.sector ? [recommendFilters.sector] : null,
+                        signal_filter: recommendFilters.signal ? [recommendFilters.signal] : null,
+                        min_confidence: recommendFilters.confidence ? parseFloat(recommendFilters.confidence) : null,
+                        position_mode: 'empty_light'
+                    })
+                });
+                if (!res.ok) throw new Error('请求失败');
+                const data = await res.json();
+                recommendData = data;
+
+                // 同时获取估值数据用于显示基金名称
+                try {
+                    const valRes = await fetch(`${API_BASE}/v1/valuation/state`);
+                    const valData = await valRes.json();
+                    valuations = {};
+                    (valData.sectors || []).forEach(s => {
+                        (s.funds || []).forEach(f => {
+                            if (f.valuation) valuations[f.code] = f.valuation;
+                        });
+                    });
+                } catch (e) {
+                    console.warn('获取估值数据失败:', e);
+                }
+
+                renderRecommendPanel(data);
+                document.getElementById('updateTime').textContent = `更新于 ${data.generated_at || new Date().toLocaleTimeString()}`;
+            } catch (e) {
+                panel.innerHTML = `<div style="text-align:center;padding:20px;color:#ef4444;">加载失败: ${e.message}</div>`;
+            }
+        }
+
+        function renderRecommendPanel(data) {
+            const panel = document.getElementById('recommendPanel');
+            const recommendations = data.recommendations || [];
+
+            // 筛选栏
+            let filterHtml = `
+                <div class="recommend-filter-bar">
+                    <select id="recommendSectorFilter" onchange="filterRecommend('sector', this.value)">
+                        <option value="">全部板块</option>
+            `;
+            // 从推荐数据中提取板块列表
+            const sectors = [...new Set(recommendations.map(r => r.sector).filter(Boolean))];
+            sectors.sort().forEach(s => {
+                filterHtml += `<option value="${s}" ${recommendFilters.sector === s ? 'selected' : ''}>${s}</option>`;
+            });
+            filterHtml += `</select>
+                    <select id="recommendSignalFilter" onchange="filterRecommend('signal', this.value)">
+                        <option value="">全部信号</option>
+                        <option value="大跌抄底" ${recommendFilters.signal === '大跌抄底' ? 'selected' : ''}>大跌抄底</option>
+                        <option value="低位建仓" ${recommendFilters.signal === '低位建仓' ? 'selected' : ''}>低位建仓</option>
+                        <option value="反弹建仓" ${recommendFilters.signal === '反弹建仓' ? 'selected' : ''}>反弹建仓</option>
+                        <option value="温和回调建仓" ${recommendFilters.signal === '温和回调建仓' ? 'selected' : ''}>温和回调建仓</option>
+                        <option value="连跌低吸" ${recommendFilters.signal === '连跌低吸' ? 'selected' : ''}>连跌低吸</option>
+                    </select>
+                    <select id="recommendConfidenceFilter" onchange="filterRecommend('confidence', this.value)">
+                        <option value="">全部置信度</option>
+                        <option value="0.8" ${recommendFilters.confidence === '0.8' ? 'selected' : ''}>高(≥80%)</option>
+                        <option value="0.6" ${recommendFilters.confidence === '0.6' ? 'selected' : ''}>中(≥60%)</option>
+                        <option value="0.4" ${recommendFilters.confidence === '0.4' ? 'selected' : ''}>低(≥40%)</option>
+                    </select>
+                    <button class="btn-primary" onclick="loadRecommendPanel()">🔄 刷新推荐</button>
+                    <span style="font-size:11px;color:#6b7280;margin-left:auto;">共 ${recommendations.length} 条推荐</span>
+                </div>
+            `;
+
+            if (recommendations.length === 0) {
+                panel.innerHTML = filterHtml + `
+                    <div class="recommend-empty">
+                        <div class="recommend-empty-icon">💡</div>
+                        <p>暂无买入推荐</p>
+                        <p style="font-size:11px;color:#9ca3af;margin-top:8px;">当前板块中的基金没有触发买入信号，请稍后刷新查看</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 推荐卡片列表
+            let cardsHtml = '';
+            for (const rec of recommendations) {
+                cardsHtml += renderRecommendCard(rec);
+            }
+
+            panel.innerHTML = filterHtml + cardsHtml;
+        }
+
+        function renderRecommendCard(rec) {
+            const signalName = rec.signal_name || '';
+            const ma = rec.market_analysis || {};
+
+            // 信号类型样式
+            let badgeClass = 'other';
+            if (signalName.includes('大跌')) badgeClass = 'dip';
+            else if (signalName.includes('建仓') || signalName.includes('反弹')) badgeClass = 'build';
+            else if (signalName.includes('低吸') || signalName.includes('回调')) badgeClass = 'bounce';
+
+            // 优先级样式
+            const priority = rec.priority || 8;
+            let cardClass = '';
+            if (priority <= 2) cardClass = 'p1';
+            else if (priority <= 4) cardClass = 'p2';
+
+            const fundCode = rec.fund_code || '';
+            const realCode = fundCode.includes('__') ? fundCode.split('__')[0] : fundCode;
+            const fundName = rec.fund_name || valuations[realCode]?.fund_name || '';
+            const confidence = Math.round((rec._confidence || ma.confidence || 1) * 100);
+            const todayChange = ma.today_change ?? 0;
+            const amount = rec.amount || 0;
+
+            // 趋势数据
+            const short3d = ma.short_3d;
+            const short5d = ma.short_5d;
+            const mid10d = ma.mid_10d;
+            const trend = ma.trend || '震荡';
+
+            // 格式化数值
+            const fmtPct = (v) => v != null ? (v >= 0 ? '+' : '') + v.toFixed(2) + '%' : '--';
+
+            let trendBarHtml = '';
+            if (short3d != null || short5d != null || mid10d != null) {
+                trendBarHtml = `<div class="recommend-trend-bar">`;
+                if (short3d != null) {
+                    const cls3 = short3d > 0 ? 'up' : short3d < 0 ? 'down' : 'flat';
+                    trendBarHtml += `<div class="trend-item ${cls3}"><span class="label">3日</span><span>${fmtPct(short3d)}</span></div>`;
+                }
+                if (short5d != null) {
+                    const cls5 = short5d > 0 ? 'up' : short5d < 0 ? 'down' : 'flat';
+                    trendBarHtml += `<div class="trend-item ${cls5}"><span class="label">5日</span><span>${fmtPct(short5d)}</span></div>`;
+                }
+                if (mid10d != null) {
+                    const cls10 = mid10d > 0 ? 'up' : mid10d < 0 ? 'down' : 'flat';
+                    trendBarHtml += `<div class="trend-item ${cls10}"><span class="label">10日</span><span>${fmtPct(mid10d)}</span></div>`;
+                }
+                trendBarHtml += `</div>`;
+            }
+
+            return `
+                <div class="recommend-card ${cardClass}">
+                    <div class="recommend-card-header">
+                        <div class="fund-info">
+                            <span class="code">${realCode}</span>
+                            ${fundName ? `<span style="margin-left:6px;font-weight:400;color:#6b7280;font-size:12px;">${fundName}</span>` : ''}
+                        </div>
+                        <span class="recommend-signal-badge ${badgeClass}">${signalName}</span>
+                    </div>
+                    <div class="recommend-card-body">
+                        <div class="recommend-metrics">
+                            <div class="metric"><span class="label">板块:</span><span class="value">${rec.sector || '未分组'}</span></div>
+                            <div class="metric"><span class="label">今日:</span><span class="value ${todayChange > 0 ? 'up' : todayChange < 0 ? 'down' : ''}">${fmtPct(todayChange)}</span></div>
+                            <div class="metric"><span class="label">置信度:</span><span class="value">${confidence}%</span></div>
+                            <div class="metric"><span class="label">仓位:</span><span class="value">${rec.position_ratio || 0}%</span></div>
+                            <div class="metric"><span class="label">趋势:</span><span class="value">${trend}</span></div>
+                        </div>
+                        ${trendBarHtml}
+                        <div class="recommend-reason">${rec.reason || ''}</div>
+                        <div class="recommend-amount">建议买入: ¥${amount.toFixed(0)}</div>
+                        <div class="recommend-actions">
+                            <button class="buy-btn" onclick="quickBuyFromRecommend('${realCode}', ${amount})">一键买入</button>
+                            <button class="watch-btn" onclick="addWatchFromRecommend('${realCode}')">加入观察</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function filterRecommend(field, value) {
+            recommendFilters[field] = value;
+            loadRecommendPanel();
+        }
+
+        function quickBuyFromRecommend(fundCode, amount) {
+            document.getElementById('buyFundCode').value = fundCode;
+            document.getElementById('buyAmount').value = amount.toFixed(0);
+            document.getElementById('buyNav').value = '';
+            document.getElementById('buyNote').value = '推荐买入';
+            document.getElementById('buyDate').value = new Date().toISOString().slice(0, 10);
+
+            const name = valuations[fundCode]?.fund_name || fundCode;
+            document.getElementById('buyModalTitle').textContent = `录入买入 · ${name}`;
+            document.getElementById('buyModal').classList.add('show');
+        }
+
+        async function submitBuy() {
+            const code = document.getElementById('buyFundCode').value;
+            const buyDate = document.getElementById('buyDate').value;
+            const amount = parseFloat(document.getElementById('buyAmount').value) || 0;
+            const navRaw = document.getElementById('buyNav').value.trim();
+            const navVal = navRaw ? parseFloat(navRaw) : null;
+            const note = document.getElementById('buyNote').value.trim();
+
+            if (!buyDate) { showStatus('请选择买入日期', 'error'); return; }
+            if (amount <= 0) { showStatus('请输入有效金额', 'error'); return; }
+            if (navRaw && (!navVal || navVal <= 0)) { showStatus('净值必须大于0，或留空后续补录', 'error'); return; }
+
+            try {
+                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(code)}/buy`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount, nav: navVal, note, buy_date: buyDate,
+                        is_supplement: false, owner: ''
+                    })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || '买入失败');
+                }
+                showStatus(`买入成功: ${code}`, 'success');
+                closeModal('buyModal');
+                loadRecommendPanel();
+            } catch (e) {
+                showStatus('买入失败: ' + e.message, 'error');
+            }
+        }
+
+        async function addWatchFromRecommend(fundCode) {
+            try {
+                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/watch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ max_position: 5000, note: '从推荐列表添加' })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || '添加失败');
+                }
+                // 检查返回状态
+                if (data.status === 'already_exists') {
+                    showStatus(`${fundCode} 已在低频网格中`, 'info');
+                } else {
+                    showStatus(`${fundCode} 已加入低频网格观察`, 'success');
+                }
+            } catch (e) {
+                showStatus('添加失败: ' + e.message, 'error');
+            }
+        }
+
+        // 键盘事件
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && document.getElementById('buyModal')?.classList.contains('show')) {
+                submitBuy();
+            }
+            if (e.key === 'Escape') {
+                closeModal('buyModal');
+            }
+        });
+
+        // 页面加载时自动获取推荐
+        window.onload = () => {
+            loadRecommendPanel();
+        };
+    </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ app.py - API入口：/state + /valuation + /fund/name + /position + /strategy
 """
 import threading
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -647,13 +648,153 @@ def cleanup_pending_rebuys_api():
     return {"cleaned": n}
 
 
-# 静态文件服务（demo.html 等）
-_base_dir = Path(__file__).parent
-app.mount("/static", StaticFiles(directory=_base_dir), name="static")
+# ============================================================
+# v5.21: 推荐买入列表 API
+# ============================================================
 
-@app.get("/demo.html")
-def serve_demo():
-    return FileResponse(_base_dir / "demo.html", media_type="text/html")
+from typing import List as TypingList
+
+class RecommendationRequest(BaseModel):
+    """推荐列表请求参数"""
+    sector_filter: Optional[TypingList[str]] = None   # 板块筛选（板块名称列表）
+    signal_filter: Optional[TypingList[str]] = None   # 信号类型筛选
+    min_confidence: Optional[float] = None            # 最低置信度 (0-1)
+    position_mode: Optional[str] = "empty_light"      # empty/light/all
+
+@app.post("/v1/recommendations")
+def get_recommendations(req: RecommendationRequest = None):
+    """
+    获取可购买推荐列表
+
+    数据来源: 实时估值板块(state.json)中的基金
+    持仓过滤: 默认仅返回空仓或轻仓基金的买入信号
+    """
+    if req is None:
+        req = RecommendationRequest()
+
+    # 1. 加载state获取板块基金列表
+    state = load_state()
+    sector_fund_codes = set()
+    sector_map = {}  # code -> sector_name
+    for sector in state.get('sectors', []):
+        sector_name = sector.get('name', '')
+        # 应用板块筛选
+        if req.sector_filter and sector_name not in req.sector_filter:
+            continue
+        for fund in sector.get('funds', []):
+            code = fund.get('code', '')
+            if code:
+                sector_fund_codes.add(code)
+                sector_map[code] = sector_name
+
+    # 2. 加载持仓信息
+    pos_data = get_all_positions()
+    funds_data = pos_data.get('funds', {})
+
+    # 3. 过滤空仓/轻仓基金
+    empty_light_codes = set()
+    for code in sector_fund_codes:
+        fund = funds_data.get(code, {})
+        holding = [b for b in fund.get('batches', []) if b.get('status') == 'holding']
+        total_cost = sum(b.get('amount', 0) for b in holding)
+        max_pos = fund.get('max_position', 5000)
+        position_ratio = total_cost / max_pos if max_pos > 0 else 0
+
+        if req.position_mode == "all":
+            empty_light_codes.add(code)
+        elif req.position_mode == "empty" and position_ratio == 0:
+            empty_light_codes.add(code)
+        elif req.position_mode == "empty_light" and position_ratio < 0.3:
+            empty_light_codes.add(code)
+
+    # 4. 生成信号并筛选买入信号
+    all_signals = generate_all_signals().get('signals', [])
+    recommendations = []
+
+    # 信号类型优先级映射
+    SIGNAL_PRIORITY = {
+        "大跌抄底": 1,
+        "低位建仓": 2,
+        "反弹建仓": 3,
+        "温和回调建仓": 4,
+        "跌势放缓建仓": 5,
+        "连跌低吸": 6,
+        "冷却期后建仓": 7,
+        "冷却期后加仓": 7,
+    }
+
+    for sig in all_signals:
+        # 只保留买入信号
+        if sig.get('action') != 'buy':
+            continue
+
+        real_code, _ = parse_fund_key(sig.get('fund_code', ''))
+
+        # 必须在板块基金列表中
+        if real_code not in empty_light_codes:
+            continue
+
+        # 应用置信度筛选
+        confidence = sig.get('_confidence', sig.get('confidence', 1.0))
+        if req.min_confidence is not None and confidence < req.min_confidence:
+            continue
+
+        # 应用信号类型筛选
+        signal_name = sig.get('signal_name', '')
+        if req.signal_filter:
+            matched = any(s in signal_name for s in req.signal_filter)
+            if not matched:
+                continue
+
+        # 添加额外信息
+        rec = {
+            **sig,
+            "sector": sector_map.get(real_code, "未分组"),
+            "position_ratio": 0.0,  # 将在下面计算
+        }
+
+        # 计算仓位比例
+        fund = funds_data.get(real_code, {})
+        holding = [b for b in fund.get('batches', []) if b.get('status') == 'holding']
+        total_cost = sum(b.get('amount', 0) for b in holding)
+        max_pos = fund.get('max_position', 5000)
+        rec["position_ratio"] = round(total_cost / max_pos * 100, 1) if max_pos > 0 else 0
+
+        recommendations.append(rec)
+
+    # 按信号优先级排序
+    recommendations.sort(key=lambda r: (
+        SIGNAL_PRIORITY.get(r.get('signal_name', ''), 99),
+        r.get('priority', 99),
+        r.get('sub_priority', 0)
+    ))
+
+    return {
+        "recommendations": recommendations,
+        "total": len(recommendations),
+        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "filters": {
+            "sector_filter": req.sector_filter,
+            "signal_filter": req.signal_filter,
+            "min_confidence": req.min_confidence,
+            "position_mode": req.position_mode,
+        }
+    }
+
+
+# 静态文件服务（real-time.html 等）
+_base_dir = Path(__file__).parent
+app.mount("/static", StaticFiles(directory=_base_dir / "static"), name="static")
+
+# 通配符路由：访问任意 .html 文件
+@app.get("/{filename:path}.html")
+def serve_html(filename: str):
+    """访问任意 HTML 文件，如 /real-time.html, /strategy.html, /recommend.html"""
+    file_path = _base_dir / f"{filename}.html"
+    if not file_path.exists():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Page not found")
+    return FileResponse(file_path, media_type="text/html")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

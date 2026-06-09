@@ -1,6 +1,6 @@
 """
 export_image.py - 服务端批量导出实时估值板块图片
-完全复刻 demo.html 中 exportSectorImage() 的 Canvas 绘制逻辑
+完全复刻 real-time.html 中 exportSectorImage() 的 Canvas 绘制逻辑
 """
 import base64
 import io

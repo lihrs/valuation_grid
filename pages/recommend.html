@@ -145,6 +145,15 @@
 </head>
 <body>
     <div class="container">
+        <div class="toolbar">
+            <div class="refresh-status">
+                <span class="dot"></span>
+                <span id="refreshTimer">自动刷新中</span>
+            </div>
+        </div>
+
+        <div class="status" id="status"></div>
+
         <!-- 导航栏 -->
         <div class="nav-bar">
             <a href="real-time.html" class="nav-btn">实时估值</a>
@@ -153,8 +162,6 @@
         </div>
 
         <h1>💡 推荐买入列表</h1>
-
-        <div class="status" id="status"></div>
 
         <div class="recommend-panel" id="recommendPanel">
             <div class="recommend-empty">
@@ -178,7 +185,8 @@
                 </div>
                 <div>
                     <label>买入金额（元）</label>
-                    <input type="number" id="buyAmount" placeholder="买入金额" step="100">
+                    <input type="number" id="buyAmount" placeholder="支付宝显示的买入金额（填0=空仓观察）" step="100">
+                    <div class="hint" style="color:#6366f1;">💡 金额填0：加入空仓观察，策略引擎将提供建仓时机建议</div>
                 </div>
                 <div>
                     <label>确认净值（选填）</label>
@@ -187,10 +195,15 @@
                 </div>
                 <div>
                     <label>备注（可选）</label>
-                    <input type="text" id="buyNote" placeholder="方便自己回忆">
+                    <input type="text" id="buyNote" placeholder="方便自己回忆，如：大跌抄底、补仓、定投">
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="buySupplement" style="width:auto;margin:0;">
+                    <label for="buySupplement" style="font-weight:400;color:#6b7280;font-size:12px;">补仓买入（计入补仓次数，备注以"补仓"开头也会自动识别）</label>
                 </div>
             </div>
             <input type="hidden" id="buyFundCode">
+            <input type="hidden" id="buyOwner">
             <div class="modal-actions" style="margin-top:12px;">
                 <button class="btn-secondary" onclick="closeModal('buyModal')">取消</button>
                 <button class="btn-success" onclick="submitBuy()">确认录入</button>
@@ -199,6 +212,7 @@
     </div>
 
     <script src="../static/js/common.js"></script>
+    <script src="../static/js/strategy.js"></script>
     <script>
         // 推荐页面专用变量
         let recommendData = { recommendations: [], filters: {} };
@@ -239,7 +253,8 @@
                 }
 
                 renderRecommendPanel(data);
-                document.getElementById('updateTime').textContent = `更新于 ${data.generated_at || new Date().toLocaleTimeString()}`;
+                setLastRefreshTime(new Date());
+                document.getElementById('updateTime').textContent = `更新于 ${data.generated_at || lastRefreshTime.toLocaleTimeString()}`;
             } catch (e) {
                 panel.innerHTML = `<div style="text-align:center;padding:20px;color:#ef4444;">加载失败: ${e.message}</div>`;
             }
@@ -371,7 +386,7 @@
                         <div class="recommend-reason">${rec.reason || ''}</div>
                         <div class="recommend-amount">建议买入: ¥${amount.toFixed(0)}</div>
                         <div class="recommend-actions">
-                            <button class="buy-btn" onclick="quickBuyFromRecommend('${realCode}', ${amount})">一键买入</button>
+                            <button class="buy-btn" onclick="quickBuyFromRecommend('${realCode}', ${amount}, '${(fundName || '').replace(/'/g, "\\'")}')">一键买入</button>
                             <button class="watch-btn" onclick="addWatchFromRecommend('${realCode}')">加入观察</button>
                         </div>
                     </div>
@@ -384,49 +399,12 @@
             loadRecommendPanel();
         }
 
-        function quickBuyFromRecommend(fundCode, amount) {
-            document.getElementById('buyFundCode').value = fundCode;
+        function quickBuyFromRecommend(fundCode, amount, fundNameHint) {
+            // 使用 strategy.js 的 showBuyModal 函数，传入基金名称提示
+            showBuyModal(fundCode, null, fundNameHint);
+            // 预填金额
             document.getElementById('buyAmount').value = amount.toFixed(0);
-            document.getElementById('buyNav').value = '';
             document.getElementById('buyNote').value = '推荐买入';
-            document.getElementById('buyDate').value = new Date().toISOString().slice(0, 10);
-
-            const name = valuations[fundCode]?.fund_name || fundCode;
-            document.getElementById('buyModalTitle').textContent = `录入买入 · ${name}`;
-            document.getElementById('buyModal').classList.add('show');
-        }
-
-        async function submitBuy() {
-            const code = document.getElementById('buyFundCode').value;
-            const buyDate = document.getElementById('buyDate').value;
-            const amount = parseFloat(document.getElementById('buyAmount').value) || 0;
-            const navRaw = document.getElementById('buyNav').value.trim();
-            const navVal = navRaw ? parseFloat(navRaw) : null;
-            const note = document.getElementById('buyNote').value.trim();
-
-            if (!buyDate) { showStatus('请选择买入日期', 'error'); return; }
-            if (amount <= 0) { showStatus('请输入有效金额', 'error'); return; }
-            if (navRaw && (!navVal || navVal <= 0)) { showStatus('净值必须大于0，或留空后续补录', 'error'); return; }
-
-            try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(code)}/buy`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        amount, nav: navVal, note, buy_date: buyDate,
-                        is_supplement: false, owner: ''
-                    })
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || '买入失败');
-                }
-                showStatus(`买入成功: ${code}`, 'success');
-                closeModal('buyModal');
-                loadRecommendPanel();
-            } catch (e) {
-                showStatus('买入失败: ' + e.message, 'error');
-            }
         }
 
         async function addWatchFromRecommend(fundCode) {
@@ -461,10 +439,10 @@
             }
         });
 
-        // 页面加载时自动获取推荐
-        window.onload = () => {
+        loadRecommendPanel();
+        startAutoRefresh(() => {
             loadRecommendPanel();
-        };
+        });
     </script>
 </body>
 </html>

@@ -118,6 +118,7 @@ async function getFundName(code) {
 
 // ============ 自动刷新（交易时段感知） ============
 let autoRefreshTimer = null;
+let displayTimer = null;
 let lastRefreshTime = null;
 
 function isTradeTime() {
@@ -130,7 +131,7 @@ function isTradeTime() {
 }
 
 function startAutoRefresh(refreshCallback) {
-    if (autoRefreshTimer) return;
+    stopAutoRefresh();  // 先清理旧定时器
 
     function scheduleNextRefresh() {
         if (autoRefreshTimer) clearTimeout(autoRefreshTimer);
@@ -170,9 +171,21 @@ function updateRefreshTimer() {
             el.textContent = '⏸ 非交易时段';
         }
     }
-    setTimeout(updateRefreshTimer, 1000);
+    if (displayTimer) clearTimeout(displayTimer);
+    displayTimer = setTimeout(updateRefreshTimer, 1000);
 }
 
 function setLastRefreshTime(time) {
     lastRefreshTime = time;
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+    if (displayTimer) {
+        clearTimeout(displayTimer);
+        displayTimer = null;
+    }
 }

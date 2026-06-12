@@ -1404,11 +1404,27 @@ def generate_signal(fund_code: str) -> dict:
 # 批量信号（v5.2: 并发优化 + 组合级风控）
 # ============================================================
 
-def generate_all_signals() -> dict:
+def generate_all_signals(include_state_funds: bool = False) -> dict:
+    """
+    生成所有基金信号
+
+    Args:
+        include_state_funds: 是否包含板块配置中的基金（推荐功能需要）
+                            默认为 True，保持向后兼容
+    """
     fund_codes = set()
     pos_data = load_positions()
     for code in pos_data.get("funds", {}).keys():
         fund_codes.add(code)
+
+    # v5.21: 可选包含板块配置中的基金
+    if include_state_funds:
+        state = load_state()
+        for sector in state.get("sectors", []):
+            for fund in sector.get("funds", []):
+                code = fund.get("code", "")
+                if code:
+                    fund_codes.add(code)
 
     # v5.2: 并发生成信号
     signals = []

@@ -231,7 +231,7 @@ async function loadStrategyPanel() {
                 ownerTag = parts[1] || '';
             }
 
-            const fundName = fundPos?.fund_name || valuations[realCode]?.fund_name || '';
+            const fundName = sig.fund_name || fundPos?.fund_name || valuations[realCode]?.fund_name || '';
             const ownerBadge = ownerTag ? `<span style="margin-left:6px;background:#e0e7ff;color:#4338ca;font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;">${ownerTag}</span>` : '';
             // 使用 encodeURIComponent 确保复合键在 URL 中安全
             const safeCode = encodeURIComponent(code);
@@ -789,10 +789,15 @@ function showBuyModal(fundCode, owner, fundNameHint) {
 
     if (val?.recent_changes?.length > 0) {
         const latest = val.recent_changes[0];
-        document.getElementById('buyNavHint').textContent =
-            `最近确认净值参考: ${latest.date}，在支付宝交易记录中查看实际值`;
+        const hintEl = document.getElementById('buyNavHint');
+        if (hintEl) {
+            hintEl.textContent = `最近确认净值参考: ${latest.date}，在支付宝交易记录中查看实际值`;
+        }
     } else {
-        document.getElementById('buyNavHint').textContent = '在支付宝→持仓→交易记录中查看「确认净值」';
+        const hintEl = document.getElementById('buyNavHint');
+        if (hintEl) {
+            hintEl.textContent = '在支付宝→持仓→交易记录中查看「确认净值」';
+        }
     }
 
     document.getElementById('buyModal').classList.add('show');

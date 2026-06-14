@@ -13,8 +13,8 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
     volumes:
       # 持久化缓存和状态数据，避免容器重启后丢失
-      - ./cache:/app/cache
-      - ./data:/app/data
+      - ./cache:/home/valuation_grid/cache
+      - ./data:/home/valuation_grid/data
       # 同步宿主机时间（Docker Desktop / Linux 主机均支持）
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped

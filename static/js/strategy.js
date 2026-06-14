@@ -69,6 +69,7 @@ function updateRegimeUI() {
 
 async function loadStrategyPanel() {
     const panel = document.getElementById('strategyPanel');
+    if(!panel) return;
     panel.innerHTML = '<div style="text-align:center;padding:20px;color:#9ca3af;"><span class="loading"></span>加载信号中...</div>';
 
     try {

@@ -1229,6 +1229,104 @@ def generate_signal(fund_code: str) -> dict:
 
     can_buy_empty = (source == "nav" or confidence >= 0.55)
 
+    # v5.23: 基于下跌加速度的风险评估函数
+    def _analyze_dip_momentum(trend_ctx: dict, today_change: float) -> dict:
+        """
+        分析下跌动量，判断是否应该避免买入。
+
+        核心思想：真正危险的是"加速下跌"，而不是"已经跌了很多"
+
+        Returns:
+            {
+                "dip_stage": "accelerating" | "decelerating" | "stable" | "unknown",
+                "risk_level": 0-2 (0=安全, 1=注意, 2=高危),
+                "action": "normal" | "caution" | "avoid",
+                "amount_multiplier": 0.0-1.2,
+                "reason": "..."
+            }
+        """
+        short_3d = trend_ctx.get("short_3d")
+        short_5d = trend_ctx.get("short_5d")
+        mid_10d = trend_ctx.get("mid_10d")
+        consecutive_down = trend_ctx.get("consecutive_down", 0)
+
+        # 默认值
+        result = {
+            "dip_stage": "unknown",
+            "risk_level": 0,
+            "action": "normal",
+            "amount_multiplier": 1.0,
+            "reason": ""
+        }
+
+        # 数据不足，不做限制
+        if short_3d is None or short_5d is None:
+            return result
+
+        # 计算下跌加速度：3日平均跌幅 vs 5日平均跌幅
+        # 3日跌得更快 = 加速下跌（危险）
+        # 3日跌得更慢 = 减速下跌（机会）
+        avg_3d = short_3d / 3
+        avg_5d = short_5d / 5
+
+        # 判断下跌阶段
+        if avg_3d < avg_5d * 1.3:
+            # 加速下跌：近3日跌幅明显大于5日平均
+            result["dip_stage"] = "accelerating"
+            result["risk_level"] = 2
+            result["action"] = "avoid"
+            result["amount_multiplier"] = 0.0
+            result["reason"] = f"加速下跌中: 近3日均跌{avg_3d:.2f}% > 5日均跌{avg_5d:.2f}%"
+
+        elif avg_3d < avg_5d * 1.1:
+            # 稳定下跌：近3日跌幅略大于5日平均
+            result["dip_stage"] = "stable"
+            result["risk_level"] = 1
+            result["action"] = "caution"
+            result["amount_multiplier"] = 0.7
+            result["reason"] = f"稳定下跌: 3日均跌{avg_3d:.2f}%"
+
+        else:
+            # 减速下跌：近3日跌幅小于5日平均（跌势放缓，可能是底部）
+            result["dip_stage"] = "decelerating"
+            result["risk_level"] = 0
+            result["action"] = "normal"
+            result["amount_multiplier"] = 1.0
+            result["reason"] = f"跌势放缓: 近3日跌幅收窄，可能是底部"
+
+        # 结合今日表现调整
+        if today_change > 0:
+            # 今日反弹：风险降低
+            result["risk_level"] = max(0, result["risk_level"] - 1)
+            result["action"] = "normal"
+            result["amount_multiplier"] = min(1.2, result["amount_multiplier"] + 0.2)
+            result["reason"] += f"，今日反弹{today_change:.2f}%"
+
+        elif today_change < -2 and consecutive_down >= 4:
+            # 连续大跌（4天以上）：风险升高
+            result["risk_level"] = min(2, result["risk_level"] + 1)
+            if result["risk_level"] == 2:
+                result["action"] = "avoid"
+                result["amount_multiplier"] = 0.0
+            result["reason"] += f"，连跌{consecutive_down}天"
+
+        elif today_change >= -0.5 and result["action"] == "avoid":
+            # 今日企稳（跌幅<0.5%）：从避免降级为谨慎
+            result["action"] = "caution"
+            result["amount_multiplier"] = 0.5
+            result["reason"] += f"，今日企稳"
+
+        return result
+
+    # 执行下跌动量分析
+    dip_analysis = _analyze_dip_momentum(trend_ctx, today_change)
+
+    # 提取关键变量
+    skip_all_buy = (dip_analysis["action"] == "avoid")
+    dip_risk_level = dip_analysis["risk_level"]
+    dip_amount_multiplier = dip_analysis["amount_multiplier"]
+    dip_risk_reason = dip_analysis["reason"]
+
     # v5.18 诊断日志：空仓信号生成关键指标（仅打印不改逻辑）
     print(f"[DIAG空仓] {fund_code} | source={source}, conf={confidence:.2f}, "
           f"today_chg={today_change:.2f}%, can_buy={can_buy_empty}")
@@ -1238,6 +1336,9 @@ def generate_signal(fund_code: str) -> dict:
     print(f"  dyn: dip_thresh={dip_threshold}, risk_mul={dyn['risk_multiplier']}, "
           f"vol_state={vol_state}")
     print(f"  size_mul={size_mul}, regime={regime}")
+    print(f"  dip_momentum: stage={dip_analysis['dip_stage']}, risk={dip_risk_level}, action={dip_analysis['action']}")
+    if skip_all_buy:
+        print(f"  ⚠️ {dip_risk_reason}")
 
     # 极端波动禁止买入
     if vol_state == "extreme_vol":
@@ -1251,9 +1352,12 @@ def generate_signal(fund_code: str) -> dict:
         return _stamp(sig, confidence, source)
 
     # --- 大跌抄底 ---
-    if today_change <= dip_threshold and not in_cooldown and can_buy_empty:
+    if today_change <= dip_threshold and not in_cooldown and can_buy_empty and not skip_all_buy:
         max_pos = pos["max_position"]
-        buy_amount = round(max_pos * 0.80 * size_mul, 2)  # v5.13: 大跌抄底从70%→80%，加大抄底力度
+        base_amount = round(max_pos * 0.80 * size_mul, 2)  # v5.13: 大跌抄底从70%→80%，加大抄底力度
+
+        # v5.23: 应用下跌动量调整
+        buy_amount = round(base_amount * dip_amount_multiplier, 2)
 
         # v5.2: 缩量大跌可能是假突破，减少建仓规模
         volume_proxy = trend_ctx.get("volume_proxy")
@@ -1263,10 +1367,13 @@ def generate_signal(fund_code: str) -> dict:
         else:
             vol_note = ""
 
+        # v5.23: 风险提示
+        risk_note = f" [{dip_analysis['dip_stage']}:{dip_risk_reason}]" if dip_risk_reason else ""
+
         sig = _make_signal(
             fund_code, signal_name="大跌抄底", action="buy", priority=6,
             amount=buy_amount,
-            reason=f"今日跌{today_change}% ≤ 动态阈值{dip_threshold}%, 买入{buy_amount}元{vol_note}",
+            reason=f"今日跌{today_change}% ≤ 动态阈值{dip_threshold}%, 买入{buy_amount}元{vol_note}{risk_note}",
         )
         print(f"  → 分支: 大跌抄底, amount={buy_amount}")
         sig["market_analysis"] = market_analysis
@@ -1278,36 +1385,42 @@ def generate_signal(fund_code: str) -> dict:
     mid_10d = trend_ctx.get("mid_10d")
     consecutive_down = trend_ctx.get("consecutive_down", 0)
 
-    if not in_cooldown and can_buy_empty:
+    if not in_cooldown and can_buy_empty and not skip_all_buy:
         max_pos = pos["max_position"]
         build_signal = None
 
         if (mid_10d is not None and mid_10d <= TREND_BUILD_TRIGGER_10D
                 and today_change >= -0.5):
-            buy_amount = round(max_pos * 0.55 * size_mul, 2)  # v5.5 优化: 低位建仓从40%→55%
+            base_amount = round(max_pos * 0.55 * size_mul, 2)
+            buy_amount = round(base_amount * dip_amount_multiplier, 2)  # v5.23: 应用下跌动量调整
+            risk_note = f" [{dip_analysis['dip_stage']}]" if dip_risk_level > 0 else ""
             build_signal = _make_signal(
                 fund_code, signal_name="低位建仓", action="buy", priority=6,
                 amount=buy_amount,
-                reason=f"10日累跌{mid_10d}%, 今日企稳, 中期低位建仓{buy_amount}元",
+                reason=f"10日累跌{mid_10d}%, 今日企稳, 中期低位建仓{buy_amount}元{risk_note}",
             )
             print(f"  → 分支: 低位建仓, mid_10d={mid_10d}, today_chg={today_change}, amount={buy_amount}")
         elif (short_5d is not None and short_5d <= TREND_BUILD_TRIGGER_5D
                 and today_change > 0):
-            buy_amount = round(max_pos * 0.45 * size_mul, 2)  # v5.5 优化: 反弹建仓从30%→45%
+            base_amount = round(max_pos * 0.45 * size_mul, 2)
+            buy_amount = round(base_amount * dip_amount_multiplier, 2)  # v5.23: 应用下跌动量调整
+            risk_note = f" [{dip_analysis['dip_stage']}]" if dip_risk_level > 0 else ""
             build_signal = _make_signal(
                 fund_code, signal_name="反弹建仓", action="buy", priority=6,
                 amount=buy_amount,
-                reason=f"5日累跌{short_5d}%, 今日反弹, 逢低建仓{buy_amount}元",
+                reason=f"5日累跌{short_5d}%, 今日反弹, 逢低建仓{buy_amount}元{risk_note}",
             )
             print(f"  → 分支: 反弹建仓, short_5d={short_5d}, today_chg={today_change}, amount={buy_amount}")
         elif (consecutive_down >= 3 and today_change < 0
                 and len(hist_changes) >= 1
                 and abs(today_change) < abs(hist_changes[0]) * 0.6):
-            buy_amount = round(max_pos * 0.35 * size_mul, 2)  # v5.5 优化: 跌势放缓建仓从25%→35%
+            base_amount = round(max_pos * 0.35 * size_mul, 2)
+            buy_amount = round(base_amount * dip_amount_multiplier, 2)  # v5.23: 应用下跌动量调整
+            risk_note = f" [{dip_analysis['dip_stage']}]" if dip_risk_level > 0 else ""
             build_signal = _make_signal(
                 fund_code, signal_name="跌势放缓建仓", action="buy", priority=7,
                 amount=buy_amount,
-                reason=f"连跌{consecutive_down}天, 跌幅收窄, 试探建仓{buy_amount}元",
+                reason=f"连跌{consecutive_down}天, 跌幅收窄, 试探建仓{buy_amount}元{risk_note}",
             )
 
         if build_signal:
@@ -1317,7 +1430,7 @@ def generate_signal(fund_code: str) -> dict:
 
     # --- 温和回调建仓 (v5.13新增) ---
     # 空仓时3日累跌 > 1倍波动率 + 非极端环境 → 45%建仓
-    if not in_cooldown and can_buy_empty:
+    if not in_cooldown and can_buy_empty and not skip_all_buy:
         vol_for_mild = trend_ctx.get("volatility_robust") or trend_ctx.get("volatility") or 1.0
         short_3d = trend_ctx.get("short_3d")
         if (short_3d is not None
@@ -1325,11 +1438,13 @@ def generate_signal(fund_code: str) -> dict:
                 and abs(short_3d) > vol_for_mild
                 and vol_state != "extreme_vol"):
             max_pos = pos["max_position"]
-            buy_amount = round(max_pos * 0.45 * size_mul, 2)
+            base_amount = round(max_pos * 0.45 * size_mul, 2)
+            buy_amount = round(base_amount * dip_amount_multiplier, 2)  # v5.23: 应用下跌动量调整
+            risk_note = f" [{dip_analysis['dip_stage']}]" if dip_risk_level > 0 else ""
             sig = _make_signal(
                 fund_code, signal_name="温和回调建仓", action="buy", priority=7,
                 amount=buy_amount,
-                reason=f"3日累跌{short_3d}%>波动率{vol_for_mild:.1f}%, 温和回调建仓{buy_amount}元",
+                reason=f"3日累跌{short_3d}%>波动率{vol_for_mild:.1f}%, 温和回调建仓{buy_amount}元{risk_note}",
             )
             print(f"  → 分支: 温和回调建仓, short_3d={short_3d}, vol={vol_for_mild}, amount={buy_amount}")
             sig["market_analysis"] = market_analysis
@@ -1342,13 +1457,15 @@ def generate_signal(fund_code: str) -> dict:
             and len(recent) >= 1
             and recent[0].get("change") is not None
             and recent[0]["change"] < 0
-            and not in_cooldown and can_buy_empty):
+            and not in_cooldown and can_buy_empty and not skip_all_buy):
         max_pos = pos["max_position"]
-        buy_amount = round(max_pos * 0.45 * size_mul, 2)  # v5.5 优化: 连跌低吸从30%→45%
+        base_amount = round(max_pos * 0.45 * size_mul, 2)
+        buy_amount = round(base_amount * dip_amount_multiplier, 2)  # v5.23: 应用下跌动量调整
+        risk_note = f" [{dip_analysis['dip_stage']}]" if dip_risk_level > 0 else ""
         sig = _make_signal(
             fund_code, signal_name="连跌低吸", action="buy", priority=7,
             amount=buy_amount,
-            reason=f"今日跌{today_change}% ≤ {consec_dip_thresh}%, 昨日跌{recent[0]['change']}%, 连跌低吸{buy_amount}元",
+            reason=f"今日跌{today_change}% ≤ {consec_dip_thresh}%, 昨日跌{recent[0]['change']}%, 连跌低吸{buy_amount}元{risk_note}",
         )
         sig["market_analysis"] = market_analysis
         _append_signal_history(fund_code, sig, market_ctx)
@@ -1359,7 +1476,7 @@ def generate_signal(fund_code: str) -> dict:
     if (not in_cooldown
             and pos.get("cooldown_sell_date")
             and today_change <= 0.3  # v5.13: 从<=0放宽到<=0.3
-            and can_buy_empty):
+            and can_buy_empty and not skip_all_buy):
         # v5.3: 过滤深度下跌趋势
         short_5d_cd = trend_ctx.get("short_5d")
         consecutive_down_cd = trend_ctx.get("consecutive_down", 0)
@@ -1370,11 +1487,13 @@ def generate_signal(fund_code: str) -> dict:
             cd_note = f"(5日累跌{short_5d_cd}%+连跌{consecutive_down_cd}天, 延迟建仓)"
         if trend_ok:
             max_pos = pos["max_position"]
-            buy_amount = round(max_pos * 0.50 * size_mul, 2)  # v5.5 优化: 冷却期后建仓从30%→50%
+            base_amount = round(max_pos * 0.50 * size_mul, 2)
+            buy_amount = round(base_amount * dip_amount_multiplier, 2)  # v5.23: 应用下跌动量调整
+            risk_note = f" [{dip_analysis['dip_stage']}]" if dip_risk_level > 0 else ""
             sig = _make_signal(
                 fund_code, signal_name="冷却期后建仓", action="buy", priority=7,
                 amount=buy_amount,
-                reason=f"冷却期结束, 今日{today_change}%, 重新建仓{buy_amount}元",
+                reason=f"冷却期结束, 今日{today_change}%, 重新建仓{buy_amount}元{risk_note}",
             )
             sig["market_analysis"] = market_analysis
             _append_signal_history(fund_code, sig, market_ctx)

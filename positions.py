@@ -236,6 +236,8 @@ def confirm_buy_nav(fund_code: str, batch_id: str, nav: float) -> dict:
     """补录买入确认净值，重新计算份额"""
     if not nav or nav <= 0:
         raise ValueError("净值必须大于0")
+    if nav < 0.01:
+        raise ValueError("净值过小（<0.01），请确认输入是否正确")
 
     data = load_positions()
     fund = data.get("funds", {}).get(fund_code)
@@ -350,7 +352,9 @@ def sell_batch(fund_code: str, batch_id: str, sell_shares: float,
 
     if sell_shares <= 0:
         raise ValueError("卖出份额必须大于0")
-    if sell_shares > batch["shares"] + 0.01:  # 容差
+    if batch["shares"] <= 0:
+        raise ValueError(f"批次 {batch_id} 无有效份额")
+    if sell_shares > batch["shares"]:
         raise ValueError(f"卖出份额 {sell_shares} 超过持有份额 {batch['shares']}")
 
     # 卖出日期
@@ -360,6 +364,13 @@ def sell_batch(fund_code: str, batch_id: str, sell_shares: float,
         sd = datetime.now().date()
 
     buy_date = datetime.strptime(batch["buy_date"], "%Y-%m-%d").date()
+
+    # 校验卖出日期合理性
+    if sd < buy_date:
+        raise ValueError(f"卖出日期 {sell_date} 不能早于买入日期 {batch['buy_date']}")
+    if sd > datetime.now().date():
+        raise ValueError("卖出日期不能在未来")
+
     hold_days = (sd - buy_date).days
 
     sell_fee_rate = get_sell_fee_rate(fund_code, hold_days)
@@ -456,6 +467,11 @@ COOLDOWN_TRADE_DAYS = 2    # v4.1: 精确交易日冷却天数
 
 def update_sell_nav(fund_code: str, sell_record_id: str, sell_nav: float) -> dict:
     """补录卖出确认净值，重新计算收益"""
+    if not sell_nav or sell_nav <= 0:
+        raise ValueError("净值必须大于0")
+    if sell_nav < 0.01:
+        raise ValueError("净值过小（<0.01），请确认输入是否正确")
+
     data = load_positions()
     fund = data.get("funds", {}).get(fund_code)
     if not fund:
@@ -674,11 +690,15 @@ def sell_fifo(fund_code: str, total_sell_shares: float,
     else:
         sd = datetime.now().date()
 
+    # 校验卖出日期合理性
+    if sd > datetime.now().date():
+        raise ValueError("卖出日期不能在未来")
+
     remaining = total_sell_shares
     batch_details = []
 
     for batch in holding_sorted:
-        if remaining <= 0.005:
+        if remaining <= 0.01:  # 统一使用 0.01 作为容差阈值
             break
         shares_to_sell = min(remaining, batch["shares"])
         # 容差处理：差距极小时当作全部卖出
@@ -755,6 +775,10 @@ def sell_fifo(fund_code: str, total_sell_shares: float,
             batch["amount"] = round(batch["amount"] * (1 - sell_cost_ratio), 2)
 
         remaining -= shares_to_sell
+
+    # 检查剩余份额，输出警告日志
+    if remaining > 0.01:
+        print(f"[Position] WARNING: FIFO卖出后剩余 {remaining:.4f} 份额未处理，可能是精度问题")
 
     # 设置冷却期（自然日兜底 + 交易日精确）
     cooldown_date = sd + timedelta(days=COOLDOWN_DAYS_NATURAL)

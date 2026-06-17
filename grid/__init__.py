@@ -1,5 +1,9 @@
 """
 grid - 低频网格交易策略模块 (原 strategy.py)
+
+包含：
+- 低频网格策略（engine.py）
+- 7天短线策略（shortterm.py）- 独立实现
 """
 from .config import (
     get_signal_history, backfill_signal_outcomes, calc_signal_win_rate,

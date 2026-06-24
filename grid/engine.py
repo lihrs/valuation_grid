@@ -390,22 +390,44 @@ def _analyze_trend(today_change: float, hist_changes: list,
 
 def _is_short_term_downtrend(trend_ctx: dict) -> bool:
     """
-    判断是否处于短期下跌趋势（3日累计下跌）
+    判断是否处于短期/中期下跌趋势（多维度综合判断）
 
-    3日累计下跌意味着短期趋势向下，此时不应建仓。
+    当多个时间维度都显示下跌趋势时，不应建仓。
     用于推荐买入信号的前置过滤。
 
     Args:
-        trend_ctx: 趋势分析上下文（包含 short_3d）
+        trend_ctx: 趋势分析上下文（包含 short_3d, short_5d, mid_10d）
 
     Returns:
-        True = 3日累计下跌，不建议买入
-        False = 3日累计上涨或持平，可以正常判断
+        True = 下跌趋势明显，不建议买入
+        False = 可以正常判断
     """
     short_3d = trend_ctx.get("short_3d")
+    short_5d = trend_ctx.get("short_5d")
+    mid_10d = trend_ctx.get("mid_10d")
 
-    # 3日累计下跌（short_3d < 0）
-    if short_3d is not None and short_3d < 0:
+    # 多维度下跌判断（任一满足即过滤）
+    # 1. 3日累计下跌超过-5%
+    if short_3d is not None and short_3d < -5.0:
+        return True
+
+    # 2. 5日累计下跌超过-5%
+    if short_5d is not None and short_5d < -5.0:
+        return True
+
+    # 3. 10日累计下跌超过-8%
+    if mid_10d is not None and mid_10d < -8.0:
+        return True
+
+    # 4. 3日和5日同时下跌超过-3%（双重确认下跌趋势）
+    if (short_3d is not None and short_3d < -3.0
+        and short_5d is not None and short_5d < -3.0):
+        return True
+
+    # 5. 3日、5日、10日全部下跌（持续下跌趋势，不应建仓）
+    if (short_3d is not None and short_3d < 0
+        and short_5d is not None and short_5d < 0
+        and mid_10d is not None and mid_10d < 0):
         return True
 
     return False

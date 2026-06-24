@@ -21,7 +21,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.93,
-      "vol_sensitivity_auto_at": "2026-06-24 21:24:46"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:44"
     },
     "001407__自定义": {
       "fund_name": "",
@@ -44,7 +44,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.88,
-      "vol_sensitivity_auto_at": "2026-06-24 21:29:14"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:18"
     },
     "022365__自定义": {
       "fund_name": "",
@@ -80,7 +80,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.88,
-      "vol_sensitivity_auto_at": "2026-06-24 21:26:21"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:43"
     },
     "018957__自定义": {
       "fund_name": "",
@@ -116,7 +116,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.8,
-      "vol_sensitivity_auto_at": "2026-06-24 21:26:20"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:36"
     },
     "002112__自定义": {
       "fund_name": "",
@@ -152,7 +152,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 1.02,
-      "vol_sensitivity_auto_at": "2026-06-24 21:24:45"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:19"
     },
     "002170__自定义": {
       "fund_name": "",
@@ -188,7 +188,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.8,
-      "vol_sensitivity_auto_at": "2026-06-24 21:24:45"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:19"
     },
     "008087__自定义": {
       "fund_name": "",
@@ -224,7 +224,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.93,
-      "vol_sensitivity_auto_at": "2026-06-24 21:29:18"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:22"
     },
     "016186__自定义": {
       "fund_name": "",
@@ -247,7 +247,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 1.06,
-      "vol_sensitivity_auto_at": "2026-06-24 21:26:19"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:32"
     },
     "017074__自定义": {
       "fund_name": "",
@@ -270,7 +270,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 1.08,
-      "vol_sensitivity_auto_at": "2026-06-24 21:24:46"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:33"
     },
     "022167": {
       "fund_name": "",
@@ -293,7 +293,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.87,
-      "vol_sensitivity_auto_at": "2026-06-24 21:24:46"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:43"
     },
     "019889": {
       "fund_name": "",
@@ -316,7 +316,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 1.2,
-      "vol_sensitivity_auto_at": "2026-06-24 21:26:20"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:38"
     },
     "021034": {
       "fund_name": "",
@@ -352,7 +352,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.93,
-      "vol_sensitivity_auto_at": "2026-06-24 21:26:22"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:41"
     },
     "007356__自定义": {
       "fund_name": "",
@@ -375,13 +375,13 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.92,
-      "vol_sensitivity_auto_at": "2026-06-24 21:26:19"
+      "vol_sensitivity_auto_at": "2026-06-25 07:35:22"
     }
   },
   "cash_reserve_ratio": 0.3,
-  "updated_at": "2026-06-24 21:29:28",
+  "updated_at": "2026-06-25 07:35:44",
   "market_regime": "neutral",
   "regime_auto": true,
   "regime_auto_result": "neutral",
-  "regime_auto_at": "2026-06-24 21:24:45"
+  "regime_auto_at": "2026-06-25 07:35:18"
 }

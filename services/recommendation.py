@@ -199,10 +199,12 @@ def get_recommendations(filters: RecommendationFilter) -> dict:
             if not matched:
                 continue
 
-        # 3日累计下跌过滤（短期趋势向下，不应建仓）
+        # 下跌趋势过滤（多维度综合判断）
         ma = sig.get('market_analysis', {})
         trend_ctx = {
             'short_3d': ma.get('short_3d'),
+            'short_5d': ma.get('short_5d'),
+            'mid_10d': ma.get('mid_10d'),
         }
         if _is_short_term_downtrend(trend_ctx):
             continue

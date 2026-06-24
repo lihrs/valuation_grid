@@ -236,6 +236,8 @@ def confirm_buy_nav(fund_code: str, batch_id: str, nav: float) -> dict:
     """补录买入确认净值，重新计算份额"""
     if not nav or nav <= 0:
         raise ValueError("净值必须大于0")
+    if nav < 0.01:
+        raise ValueError("净值过小（<0.01），请确认输入是否正确")
 
     data = load_positions()
     fund = data.get("funds", {}).get(fund_code)

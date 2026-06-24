@@ -13,6 +13,7 @@ from valuation.core import load_state
 from valuation.providers import get_fund_name
 from positions import get_all_positions, parse_fund_key
 from grid import generate_all_signals
+from grid.engine import _is_short_term_downtrend
 
 
 # 信号类型优先级映射
@@ -197,6 +198,14 @@ def get_recommendations(filters: RecommendationFilter) -> dict:
             matched = any(s in signal_name for s in filters.signal_filter)
             if not matched:
                 continue
+
+        # 3日累计下跌过滤（短期趋势向下，不应建仓）
+        ma = sig.get('market_analysis', {})
+        trend_ctx = {
+            'short_3d': ma.get('short_3d'),
+        }
+        if _is_short_term_downtrend(trend_ctx):
+            continue
 
         # 添加额外信息
         rec = {

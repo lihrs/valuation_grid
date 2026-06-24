@@ -37,14 +37,14 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 6.827,
-          "peak_date": "2026-06-10"
+          "peak_nav": 7.726,
+          "peak_date": "2026-06-24"
         }
       ],
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.88,
-      "vol_sensitivity_auto_at": "2026-06-10 19:47:30"
+      "vol_sensitivity_auto_at": "2026-06-24 21:29:14"
     },
     "022365__自定义": {
       "fund_name": "",
@@ -60,8 +60,8 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 6.0565,
-          "peak_date": "2026-06-09"
+          "peak_nav": 6.1413,
+          "peak_date": "2026-06-24"
         },
         {
           "id": "b20260610a",
@@ -73,14 +73,14 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 5.9176,
-          "peak_date": "2026-06-10"
+          "peak_nav": 6.1413,
+          "peak_date": "2026-06-24"
         }
       ],
       "supplement_count": 0,
       "cooldown_until": null,
-      "vol_sensitivity_auto": 0.98,
-      "vol_sensitivity_auto_at": "2026-06-10 16:00:28"
+      "vol_sensitivity_auto": 0.88,
+      "vol_sensitivity_auto_at": "2026-06-24 21:26:21"
     },
     "018957__自定义": {
       "fund_name": "",
@@ -96,8 +96,8 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 5.5601,
-          "peak_date": "2026-06-09"
+          "peak_nav": 5.9895,
+          "peak_date": "2026-06-24"
         },
         {
           "id": "b20260610a",
@@ -109,14 +109,14 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 5.3834,
-          "peak_date": "2026-06-10"
+          "peak_nav": 5.9895,
+          "peak_date": "2026-06-24"
         }
       ],
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.8,
-      "vol_sensitivity_auto_at": "2026-06-10 17:32:52"
+      "vol_sensitivity_auto_at": "2026-06-24 21:26:20"
     },
     "002112__自定义": {
       "fund_name": "",
@@ -204,8 +204,8 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 3.4706,
-          "peak_date": "2026-06-09"
+          "peak_nav": 3.8241,
+          "peak_date": "2026-06-24"
         },
         {
           "id": "b20260610a",
@@ -217,14 +217,14 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 3.3536,
-          "peak_date": "2026-06-10"
+          "peak_nav": 3.8241,
+          "peak_date": "2026-06-24"
         }
       ],
       "supplement_count": 0,
       "cooldown_until": null,
-      "vol_sensitivity_auto": 0.88,
-      "vol_sensitivity_auto_at": "2026-06-10 21:59:02"
+      "vol_sensitivity_auto": 0.93,
+      "vol_sensitivity_auto_at": "2026-06-24 21:29:18"
     },
     "016186__自定义": {
       "fund_name": "",
@@ -247,7 +247,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 1.06,
-      "vol_sensitivity_auto_at": "2026-06-10 16:00:26"
+      "vol_sensitivity_auto_at": "2026-06-24 21:26:19"
     },
     "017074__自定义": {
       "fund_name": "",
@@ -263,8 +263,8 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 1.2069,
-          "peak_date": "2026-06-10"
+          "peak_nav": 1.316,
+          "peak_date": "2026-06-24"
         }
       ],
       "supplement_count": 0,
@@ -315,8 +315,8 @@
       ],
       "supplement_count": 0,
       "cooldown_until": null,
-      "vol_sensitivity_auto": 1.14,
-      "vol_sensitivity_auto_at": "2026-06-10 16:00:27"
+      "vol_sensitivity_auto": 1.2,
+      "vol_sensitivity_auto_at": "2026-06-24 21:26:20"
     },
     "021034": {
       "fund_name": "",
@@ -332,8 +332,8 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 1.7267,
-          "peak_date": "2026-06-07"
+          "peak_nav": 1.7778,
+          "peak_date": "2026-06-24"
         },
         {
           "id": "b20260610a",
@@ -345,14 +345,14 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 1.724,
-          "peak_date": "2026-06-10"
+          "peak_nav": 1.7778,
+          "peak_date": "2026-06-24"
         }
       ],
       "supplement_count": 0,
       "cooldown_until": null,
-      "vol_sensitivity_auto": 0.88,
-      "vol_sensitivity_auto_at": "2026-06-10 15:58:45"
+      "vol_sensitivity_auto": 0.93,
+      "vol_sensitivity_auto_at": "2026-06-24 21:26:22"
     },
     "007356__自定义": {
       "fund_name": "",
@@ -368,18 +368,18 @@
           "note": "",
           "is_supplement": "",
           "is_rebuy": false,
-          "peak_nav": 4.994,
-          "peak_date": "2026-06-09"
+          "peak_nav": 5.6536,
+          "peak_date": "2026-06-24"
         }
       ],
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.92,
-      "vol_sensitivity_auto_at": "2026-06-10 21:58:59"
+      "vol_sensitivity_auto_at": "2026-06-24 21:26:19"
     }
   },
   "cash_reserve_ratio": 0.3,
-  "updated_at": "2026-06-24 21:24:46",
+  "updated_at": "2026-06-24 21:29:28",
   "market_regime": "neutral",
   "regime_auto": true,
   "regime_auto_result": "neutral",

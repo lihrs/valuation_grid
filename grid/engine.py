@@ -385,6 +385,33 @@ def _analyze_trend(today_change: float, hist_changes: list,
 
 
 # ============================================================
+# 短期下跌趋势判断（用于推荐买入过滤）
+# ============================================================
+
+def _is_short_term_downtrend(trend_ctx: dict) -> bool:
+    """
+    判断是否处于短期下跌趋势（3日累计下跌）
+
+    3日累计下跌意味着短期趋势向下，此时不应建仓。
+    用于推荐买入信号的前置过滤。
+
+    Args:
+        trend_ctx: 趋势分析上下文（包含 short_3d）
+
+    Returns:
+        True = 3日累计下跌，不建议买入
+        False = 3日累计上涨或持平，可以正常判断
+    """
+    short_3d = trend_ctx.get("short_3d")
+
+    # 3日累计下跌（short_3d < 0）
+    if short_3d is not None and short_3d < 0:
+        return True
+
+    return False
+
+
+# ============================================================
 # 核心信号生成
 # ============================================================
 
@@ -899,18 +926,26 @@ def generate_signal(fund_code: str) -> dict:
                 if best_signal is None or _is_higher_priority(sig, best_signal):
                     best_signal = sig
 
-            # v5.6 重构: 第二层——持仓时间豁免（最老批次<20天完全不触发总仓位减仓）
-            # 原因: 新建仓需要时间度过正常波动，<20天内的浮亏是网格策略的正常成本
-            elif oldest_hd < 20:
-                # 仅记录预警，不触发卖出
+            # v5.22: 持仓时间豁免优化
+            # - 无论持仓多少天，浮亏≤-10%就触发止损（取消豁免期对深亏的保护）
+            # - 只有浮亏>-10%且持仓<7天时才豁免（避免新基金小亏时频繁交易产生高费率）
+            STOP_LOSS_THRESHOLD = -10.0  # 触发止损的浮亏阈值（无豁免）
+            EXEMPTION_DAYS = 7  # 豁免天数（仅对浅亏有效）
+
+            # 判断是否应该跳过止损（仅浅亏+新基金才豁免）
+            skip_by_exemption = (oldest_hd < EXEMPTION_DAYS
+                                 and total_profit_pct > STOP_LOSS_THRESHOLD)
+
+            if skip_by_exemption:
+                # 7天内且浮亏>-10%，仅预警
                 if total_profit_pct <= -8.0:
                     extra_alerts.append(
-                        f"总仓位浮亏{total_profit_pct}%，但最老批次仅持有{oldest_hd}天(<20天豁免期)，暂不减仓"
+                        f"总仓位浮亏{total_profit_pct}%，最老批次仅持有{oldest_hd}天(<{EXEMPTION_DAYS}天)，浮亏未达{-STOP_LOSS_THRESHOLD}%止损线，暂不减仓"
                     )
 
-            # v5.6 重构: 第三层——趋势确认减仓（持仓≥20天后，需要趋势恶化双确认才减仓）
-            # 原因: 不再用固定止损线，改用趋势判断——只有确认趋势转坏才减仓，避免正常波动反复触发
-            elif oldest_hd >= 20:
+            # v5.22: 持仓≥7天 或 浮亏≤-10% 时，进入止损判断
+            # 原因: 深亏必须及时止损，不能因持仓时间而被豁免
+            if not skip_by_exemption:
                 trend_label = trend_ctx.get("trend_label", "震荡")
                 consecutive_down = trend_ctx.get("consecutive_down", 0)
                 short_5d_val = trend_ctx.get("short_5d")
@@ -943,40 +978,56 @@ def generate_signal(fund_code: str) -> dict:
                     trend_deteriorating = True
                     trend_confirm_reasons.append(f"补仓{supp_count}/{dyn_max_supp}已用尽")
 
-                if trend_deteriorating and oldest_hd >= 7:
+                # v5.22: 浮亏≤-10%直接触发止损，无需趋势确认
+                # 浮亏>-10%时需要趋势确认才止损
+                is_deep_loss_stop = total_profit_pct <= STOP_LOSS_THRESHOLD
+                should_stop_loss = is_deep_loss_stop or (trend_deteriorating and oldest_hd >= EXEMPTION_DAYS)
+
+                if should_stop_loss:
                     oldest_fr = get_sell_fee_rate(fund_code, oldest_hd)
-                    # v5.6 重构: 按亏损严重程度分级减仓
-                    if total_profit_pct <= -12.0:
-                        portfolio_sell_pct = 50  # 深亏+趋势恶化
-                    elif total_profit_pct <= -8.0:
-                        portfolio_sell_pct = 35  # 中度亏损+趋势恶化
-                    elif total_profit_pct <= -6.0:  # v5.13: -5→-6，收紧浅亏减仓
-                        portfolio_sell_pct = 25  # 轻度亏损+趋势恶化
+
+                    # v5.22: 浮亏≤-10%全部清仓，不再考虑该基金
+                    if is_deep_loss_stop:
+                        portfolio_sell_pct = 100  # 全部清仓
                     else:
-                        portfolio_sell_pct = 0   # 浅亏不减仓，等趋势进一步确认
+                        portfolio_sell_pct = 25  # 浅亏+趋势恶化，部分减仓
+
                     if portfolio_sell_pct > 0:
                         sell_shares = round(oldest["shares"] * portfolio_sell_pct / 100, 2)
                         _psl_suppressed = _sold_today
+
+                        # 区分信号名称：深亏清仓 vs 趋势确认减仓
+                        if is_deep_loss_stop:
+                            signal_name = f"深亏清仓({-STOP_LOSS_THRESHOLD:.0f}%线)" + ("(今日已操作)" if _psl_suppressed else "")
+                            reason = (f"总浮亏{total_profit_pct}% ≤ {-STOP_LOSS_THRESHOLD}%止损线, "
+                                      f"持仓{oldest_hd}天, 全部清仓，不再考虑该基金"
+                                      + (f" (今日已执行卖出，次日再评估)" if _psl_suppressed else ""))
+                            alert_msg = f"总仓位浮亏{total_profit_pct}%触发{-STOP_LOSS_THRESHOLD}%止损线，全部清仓"
+                        else:
+                            signal_name = "趋势确认减仓" + ("(今日已操作)" if _psl_suppressed else "")
+                            reason = (f"总浮亏{total_profit_pct}%, 持仓{oldest_hd}天, "
+                                      f"趋势恶化确认({'+'.join(trend_confirm_reasons)}), "
+                                      f"最老批次减仓{portfolio_sell_pct}%"
+                                      + (f" (今日已执行卖出，次日再评估)" if _psl_suppressed else ""))
+                            alert_msg = f"总仓位浮亏{total_profit_pct}%+趋势恶化，确认减仓"
+
                         sig = _make_signal(
                             fund_code,
-                            signal_name="趋势确认减仓" + ("(今日已操作)" if _psl_suppressed else ""),
+                            signal_name=signal_name,
                             action="hold" if _psl_suppressed else "sell",
                             priority=1,
                             sub_priority=2,
                             target_batch_id=oldest["id"],
                             sell_shares=sell_shares,
                             sell_pct=portfolio_sell_pct,
-                            reason=(f"总浮亏{total_profit_pct}%, 持仓{oldest_hd}天, "
-                                    f"趋势恶化确认({'+'.join(trend_confirm_reasons)}), "
-                                    f"最老批次减仓{portfolio_sell_pct}%"
-                                    + (f" (今日已执行卖出，次日再评估)" if _psl_suppressed else "")),
+                            reason=reason,
                             fee_info={
                                 "sell_fee_rate": oldest_fr,
                                 "estimated_fee": round(sell_shares * current_nav * oldest_fr / 100, 2),
                                 "estimated_net_profit": round(sell_shares * current_nav * (1 - oldest_fr / 100) - oldest["amount"] * portfolio_sell_pct / 100, 2),
                             },
                             alert=True,
-                            alert_msg=f"总仓位浮亏{total_profit_pct}%+趋势恶化，确认减仓",
+                            alert_msg=alert_msg,
                         )
                         all_signals.append(sig)
                         if best_signal is None or _is_higher_priority(sig, best_signal):

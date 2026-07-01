@@ -1,0 +1,62 @@
+{
+  "fund_code": "011126",
+  "fund_name": "富国互联科技股票C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 88.5,
+  "parsed_weight": 63.93,
+  "missing_weight": 24.57,
+  "positions": [
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 9.49
+    },
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 9.39
+    },
+    {
+      "stock_code": "06869",
+      "stock_name": "长飞光纤光缆",
+      "weight": 8.72
+    },
+    {
+      "stock_code": "002463",
+      "stock_name": "沪电股份",
+      "weight": 7.63
+    },
+    {
+      "stock_code": "002384",
+      "stock_name": "东山精密",
+      "weight": 6.71
+    },
+    {
+      "stock_code": "002916",
+      "stock_name": "深南电路",
+      "weight": 5.53
+    },
+    {
+      "stock_code": "300394",
+      "stock_name": "天孚通信",
+      "weight": 5.39
+    },
+    {
+      "stock_code": "688019",
+      "stock_name": "安集科技",
+      "weight": 4.48
+    },
+    {
+      "stock_code": "603929",
+      "stock_name": "亚翔集成",
+      "weight": 3.36
+    },
+    {
+      "stock_code": "603308",
+      "stock_name": "应流股份",
+      "weight": 3.23
+    }
+  ],
+  "fetched_at": "2026-06-22 22:06:24",
+  "data_source": "eastmoney"
+}

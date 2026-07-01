@@ -224,6 +224,39 @@ def add_batch(fund_code: str, amount: float, nav: float = None, note: str = "",
             consume_pending_rebuy(fund_code, pending_rebuy_id, batch["id"])
         except Exception as _e:
             print(f"[Position] 标记挂单 {pending_rebuy_id} triggered 失败: {_e}")
+    # v5.X: 兼容场景——用户用"买入"按钮手动备注"回补"时自动匹配消耗挂单
+    elif note and ("回补" in note or "延迟" in note):
+        _match = None
+        for _pr in fund.get("pending_rebuys", []):
+            if _pr.get("status") == "pending":
+                _amt = _pr.get("amount", 0)
+                # 金额偏差不超过50%则认为匹配（取第一个最旧的有效挂单）
+                if _amt > 0 and abs(_amt - batch["amount"]) / _amt <= 0.5:
+                    _match = _pr
+                    break
+        if _match:
+            try:
+                from grid.pending_rebuy import consume_pending_rebuy
+                if consume_pending_rebuy(fund_code, _match["id"], batch["id"]):
+                    # consume_pending_rebuy 内部重新 load/save 了，
+                    # 需重新加载更新 batch 的回补标记
+                    _d2 = load_positions()
+                    _f2 = _d2.get("funds", {}).get(fund_code)
+                    if _f2:
+                        for _b2 in _f2.get("batches", []):
+                            if _b2["id"] == batch["id"]:
+                                _b2["is_rebuy"] = True
+                                _b2["from_pending_rebuy"] = _match["id"]
+                                break
+                        save_positions(_d2)
+                    # 同时更新内存中的 batch 对象
+                    batch["is_rebuy"] = True
+                    batch["from_pending_rebuy"] = _match["id"]
+                    # 更新 is_rebuy 本地变量以便日志打印正确
+                    is_rebuy = True
+                    print(f"[Position] 自动匹配挂单 {fund_code} {batch['id']} → {_match['id']}")
+            except Exception as _e:
+                print(f"[Position] 自动匹配挂单 {fund_code} 失败: {_e}")
 
     print(f"[Position] 新增批次 {fund_code} {batch['id']}: {amount}元 @ {_nav or '待确认'} ({date_str})"
           f"{' [补仓]' if _is_supp else ''}"

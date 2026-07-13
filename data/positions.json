@@ -2,7 +2,7 @@
   "funds": {
     "017560__自选": {
       "fund_name": "",
-      "max_position": 33000,
+      "max_position": 44000,
       "batches": [
         {
           "id": "b20260310a",
@@ -41,15 +41,17 @@
         {
           "id": "b20260522a",
           "buy_date": "2026-05-22",
-          "amount": 1730.3,
+          "amount": 519.09,
           "nav": 3.2427,
-          "shares": 533.6,
+          "shares": 160.08,
           "status": "holding",
           "note": "延迟回补",
           "is_supplement": false,
           "is_rebuy": false,
           "peak_nav": 4.2843,
-          "peak_date": "2026-06-30"
+          "peak_date": "2026-06-30",
+          "original_amount": 1730.3,
+          "original_shares": 533.6
         },
         {
           "id": "b20260608a",
@@ -64,10 +66,50 @@
           "from_pending_rebuy": "rb20260515a",
           "peak_nav": 4.2843,
           "peak_date": "2026-06-30"
+        },
+        {
+          "id": "b20260702a",
+          "buy_date": "2026-07-02",
+          "amount": 1069.0,
+          "nav": 3.8401,
+          "shares": 278.38,
+          "status": "holding",
+          "note": "延迟回补",
+          "is_supplement": false,
+          "is_rebuy": false,
+          "peak_nav": 4.2786,
+          "peak_date": "2026-07-09"
+        },
+        {
+          "id": "b20260706a",
+          "buy_date": "2026-07-06",
+          "amount": 1074.13,
+          "nav": 3.8485,
+          "shares": 279.1,
+          "status": "holding",
+          "note": "延迟回补触发(延迟回补(扭亏止盈卖出))",
+          "is_supplement": false,
+          "is_rebuy": true,
+          "from_pending_rebuy": "rb20260701b",
+          "peak_nav": 4.2786,
+          "peak_date": "2026-07-09"
+        },
+        {
+          "id": "b20260713a",
+          "buy_date": "2026-07-13",
+          "amount": 305.11,
+          "nav": 3.8313,
+          "shares": 79.64,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": true,
+          "from_pending_rebuy": "rb20260708a",
+          "confirmed_nav": null
         }
       ],
       "supplement_count": 1,
-      "cooldown_until": "2026-05-30",
+      "cooldown_until": "2026-07-05",
       "watch_note": "空仓待建仓",
       "vol_sensitivity": 0.9,
       "sell_records": [
@@ -155,9 +197,26 @@
           "hold_days": 70,
           "sell_fee_rate": 0.0,
           "note": "补仓"
+        },
+        {
+          "id": "s20260701a",
+          "batch_id": "b20260522a",
+          "sell_date": "2026-07-01",
+          "sell_shares": 373.52,
+          "buy_nav": 3.2427,
+          "sell_nav": 4.1657,
+          "cost": 1211.21,
+          "gross": 1555.97,
+          "fee": 0.0,
+          "net": 1555.97,
+          "profit": 344.76,
+          "profit_pct": 28.5,
+          "hold_days": 40,
+          "sell_fee_rate": 0.0,
+          "note": "延迟回补"
         }
       ],
-      "cooldown_sell_date": "2026-05-26",
+      "cooldown_sell_date": "2026-07-01",
       "cooldown_trade_days": 2,
       "pending_rebuys": [
         {
@@ -214,7 +273,9 @@
           "source_signal": "扭亏止盈卖出",
           "signal_label": "延迟回补(扭亏止盈卖出)",
           "sell_nav": 4.0897,
-          "status": "pending"
+          "status": "triggered",
+          "triggered_at": "2026-07-04",
+          "triggered_batch_id": "b20260703a"
         },
         {
           "id": "rb20260701b",
@@ -227,13 +288,56 @@
           "source_signal": "扭亏止盈卖出",
           "signal_label": "延迟回补(扭亏止盈卖出)",
           "sell_nav": 4.1081,
+          "status": "triggered",
+          "triggered_at": "2026-07-07",
+          "triggered_batch_id": "b20260706a"
+        },
+        {
+          "id": "rb20260707a",
+          "created_date": "2026-07-07",
+          "expire_date": "2026-08-04",
+          "trigger_nav": 3.7503,
+          "amount": 172.41,
+          "ratio": 0.4,
+          "trend_at_creation": "震荡",
+          "source_signal": "扭亏止盈卖出",
+          "signal_label": "延迟回补(扭亏止盈卖出)",
+          "sell_nav": 3.8464,
+          "status": "pending"
+        },
+        {
+          "id": "rb20260708a",
+          "created_date": "2026-07-08",
+          "expire_date": "2026-08-05",
+          "trigger_nav": 3.8313,
+          "amount": 305.11,
+          "ratio": 0.7,
+          "trend_at_creation": "连涨",
+          "source_signal": "扭亏止盈卖出",
+          "signal_label": "延迟回补(扭亏止盈卖出)",
+          "sell_nav": 3.8896,
+          "status": "triggered",
+          "triggered_at": "2026-07-13",
+          "triggered_batch_id": "b20260713a"
+        },
+        {
+          "id": "rb20260710a",
+          "created_date": "2026-07-10",
+          "expire_date": "2026-08-07",
+          "trigger_nav": 3.9135,
+          "amount": 311.66,
+          "ratio": 0.7,
+          "trend_at_creation": "偏强",
+          "source_signal": "扭亏止盈卖出",
+          "signal_label": "延迟回补(扭亏止盈卖出)",
+          "sell_nav": 3.9731,
           "status": "pending"
         }
       ]
     },
     "010524__自选": {
       "fund_name": "",
-      "max_position": 27000,
+      "max_position": 36000,
       "batches": [
         {
           "id": "b20260330a",
@@ -255,15 +359,17 @@
         {
           "id": "b20260521a",
           "buy_date": "2026-05-21",
-          "amount": 1057.69,
+          "amount": 317.3,
           "nav": 2.3445,
-          "shares": 451.14,
+          "shares": 135.34,
           "status": "holding",
           "note": "延迟回补",
           "is_supplement": false,
           "is_rebuy": false,
           "peak_nav": 2.9873,
-          "peak_date": "2026-06-30"
+          "peak_date": "2026-06-30",
+          "original_amount": 1057.69,
+          "original_shares": 451.14
         },
         {
           "id": "b20260610a",
@@ -288,9 +394,10 @@
           "status": "holding",
           "note": "延迟回补触发",
           "is_supplement": false,
-          "is_rebuy": false,
+          "is_rebuy": true,
           "peak_nav": 2.9873,
-          "peak_date": "2026-06-30"
+          "peak_date": "2026-06-30",
+          "from_pending_rebuy": "rb20260626a"
         }
       ],
       "supplement_count": 0,
@@ -347,6 +454,23 @@
           "hold_days": 67,
           "sell_fee_rate": 0.0,
           "note": "建仓"
+        },
+        {
+          "id": "s20260703a",
+          "batch_id": "b20260521a",
+          "sell_date": "2026-07-03",
+          "sell_shares": 315.8,
+          "buy_nav": 2.3445,
+          "sell_nav": 2.6641,
+          "cost": 740.39,
+          "gross": 841.32,
+          "fee": 0.0,
+          "net": 841.32,
+          "profit": 100.93,
+          "profit_pct": 13.6,
+          "hold_days": 43,
+          "sell_fee_rate": 0.0,
+          "note": "延迟回补"
         }
       ],
       "pending_rebuys": [
@@ -404,34 +528,445 @@
           "source_signal": "扭亏止盈卖出",
           "signal_label": "延迟回补(扭亏止盈卖出)",
           "sell_nav": 2.8877,
-          "status": "pending"
+          "status": "triggered",
+          "triggered_at": "2026-06-29",
+          "triggered_batch_id": "b20260629a"
         }
       ],
-      "cooldown_until": "2026-06-09",
-      "cooldown_sell_date": "2026-06-05",
+      "cooldown_until": "2026-07-07",
+      "cooldown_sell_date": "2026-07-03",
       "cooldown_trade_days": 2
     },
-    "017560__老爸": {
+    "025209__柯": {
       "fund_name": "",
-      "max_position": 25000,
+      "max_position": 5000.0,
       "batches": [],
       "supplement_count": 0,
       "cooldown_until": null,
       "watch_note": "空仓待建仓",
-      "vol_sensitivity": 0.8
+      "vol_sensitivity_auto": 0.92,
+      "vol_sensitivity_auto_at": "2026-07-13 17:26:03"
     },
-    "010524__老爸": {
+    "014143__驴": {
       "fund_name": "",
-      "max_position": 15000,
-      "batches": [],
+      "max_position": 5000,
+      "batches": [
+        {
+          "id": "b20260227a",
+          "buy_date": "2026-02-27",
+          "amount": 200.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260303a",
+          "buy_date": "2026-03-03",
+          "amount": 90.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260309a",
+          "buy_date": "2026-03-09",
+          "amount": 20.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260311a",
+          "buy_date": "2026-03-11",
+          "amount": 80.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260312a",
+          "buy_date": "2026-03-12",
+          "amount": 20.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260317a",
+          "buy_date": "2026-03-17",
+          "amount": 20.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260319a",
+          "buy_date": "2026-03-19",
+          "amount": 20.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260320a",
+          "buy_date": "2026-03-20",
+          "amount": 50.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260326a",
+          "buy_date": "2026-03-26",
+          "amount": 90.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260408a",
+          "buy_date": "2026-04-08",
+          "amount": 20.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260508a",
+          "buy_date": "2026-05-08",
+          "amount": 30.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260514a",
+          "buy_date": "2026-05-14",
+          "amount": 80.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260605a",
+          "buy_date": "2026-06-05",
+          "amount": 40.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260610a",
+          "buy_date": "2026-06-10",
+          "amount": 20.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260616a",
+          "buy_date": "2026-06-16",
+          "amount": 30.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260623a",
+          "buy_date": "2026-06-23",
+          "amount": 100.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 14.6814,
+          "peak_date": "2026-07-13"
+        }
+      ],
       "supplement_count": 0,
       "cooldown_until": null,
-      "watch_note": "空仓待建仓",
-      "vol_sensitivity": 1.05
+      "vol_sensitivity_auto": 1.09,
+      "vol_sensitivity_auto_at": "2026-07-13 15:32:52"
+    },
+    "025500__驴": {
+      "fund_name": "",
+      "max_position": 5000,
+      "batches": [
+        {
+          "id": "b20260629a",
+          "buy_date": "2026-06-29",
+          "amount": 100.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 2.4281,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260701a",
+          "buy_date": "2026-07-01",
+          "amount": 100.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 2.4281,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260702a",
+          "buy_date": "2026-07-02",
+          "amount": 200.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 2.4281,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260709a",
+          "buy_date": "2026-07-09",
+          "amount": 50.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 2.4281,
+          "peak_date": "2026-07-13"
+        }
+      ],
+      "supplement_count": 0,
+      "cooldown_until": null,
+      "vol_sensitivity_auto": 1.02,
+      "vol_sensitivity_auto_at": "2026-07-13 15:40:24"
+    },
+    "007818__驴": {
+      "fund_name": "",
+      "max_position": 5000,
+      "batches": [
+        {
+          "id": "b20260713a",
+          "buy_date": "2026-07-13",
+          "amount": 50.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 4.2586,
+          "peak_date": "2026-07-13"
+        }
+      ],
+      "supplement_count": 0,
+      "cooldown_until": null,
+      "vol_sensitivity_auto": 0.96,
+      "vol_sensitivity_auto_at": "2026-07-13 15:47:06"
+    },
+    "006503__驴": {
+      "fund_name": "",
+      "max_position": 5000,
+      "batches": [
+        {
+          "id": "b20260617a",
+          "buy_date": "2026-06-17",
+          "amount": 50.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 7.813,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260618a",
+          "buy_date": "2026-06-18",
+          "amount": 100.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 7.813,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260623a",
+          "buy_date": "2026-06-23",
+          "amount": 200.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 7.813,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260625a",
+          "buy_date": "2026-06-25",
+          "amount": 30.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 7.813,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260626a",
+          "buy_date": "2026-06-26",
+          "amount": 100.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 7.813,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260629a",
+          "buy_date": "2026-06-29",
+          "amount": 100.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 7.813,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260702a",
+          "buy_date": "2026-07-02",
+          "amount": 40.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 7.813,
+          "peak_date": "2026-07-13"
+        },
+        {
+          "id": "b20260709a",
+          "buy_date": "2026-07-09",
+          "amount": 60.0,
+          "nav": 0.0,
+          "shares": 0.0,
+          "status": "holding",
+          "note": "",
+          "is_supplement": "",
+          "is_rebuy": false,
+          "peak_nav": 7.813,
+          "peak_date": "2026-07-13"
+        }
+      ],
+      "supplement_count": 0,
+      "cooldown_until": null,
+      "vol_sensitivity_auto": 0.94,
+      "vol_sensitivity_auto_at": "2026-07-13 15:50:12"
     }
   },
   "cash_reserve_ratio": 0.3,
-  "updated_at": "2026-07-01 14:57:04",
+  "updated_at": "2026-07-13 20:11:13",
   "market_regime": "neutral",
   "regime_auto": true,
   "regime_auto_result": "neutral",

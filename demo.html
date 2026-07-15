@@ -935,6 +935,149 @@
         let isRefreshing = false;
         let lastRefreshTime = null;
         let currentTab = 'valuation';
+        let strategyLoadPromise = null;
+        let lastUserInteractionAt = 0;
+
+        const RETRYABLE_API_STATUS = new Set([502, 503, 504]);
+        const API_RETRY_DELAYS = [400, 1000];
+        const USER_INTERACTION_GRACE_MS = 6000;
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function markUserInteraction() {
+            lastUserInteractionAt = Date.now();
+        }
+
+        function getRefreshPauseReason() {
+            if (document.hidden) return '页面在后台';
+            if (document.querySelector('.modal.show')) return '正在填写或确认';
+
+            const active = document.activeElement;
+            if (active && (active.matches('input, textarea, select') || active.isContentEditable)) {
+                return '正在输入';
+            }
+
+            const activePanel = document.querySelector('.tab-panel.active');
+            if (activePanel) {
+                const hasPendingInput = [...activePanel.querySelectorAll(
+                    'input:not([type="hidden"]):not([type="button"]):not([type="submit"]), textarea'
+                )].some(input => String(input.value || '').trim() !== '');
+                if (hasPendingInput) return '有未提交输入';
+            }
+
+            if (Date.now() - lastUserInteractionAt < USER_INTERACTION_GRACE_MS) {
+                return '正在操作';
+            }
+            return '';
+        }
+
+        function capturePanelView(panel) {
+            const state = { scrollY: window.scrollY, fundKey: '', top: 0 };
+            if (!panel) return state;
+            const visibleCard = [...panel.querySelectorAll('[data-fund-key]')]
+                .find(card => card.getBoundingClientRect().bottom > 0);
+            if (visibleCard) {
+                state.fundKey = visibleCard.dataset.fundKey || '';
+                state.top = visibleCard.getBoundingClientRect().top;
+            }
+            return state;
+        }
+
+        function restorePanelView(panel, viewState) {
+            requestAnimationFrame(() => {
+                if (viewState.fundKey && panel) {
+                    const card = [...panel.querySelectorAll('[data-fund-key]')]
+                        .find(item => item.dataset.fundKey === viewState.fundKey);
+                    if (card) {
+                        window.scrollBy(0, card.getBoundingClientRect().top - viewState.top);
+                        return;
+                    }
+                }
+                window.scrollTo(0, viewState.scrollY);
+            });
+        }
+
+        async function fetchJson(url, options = {}, label = '请求') {
+            let lastError;
+            const {
+                retrySafe = false,
+                timeoutMs = 0,
+                maxRetries = API_RETRY_DELAYS.length,
+                ...fetchOptions
+            } = options;
+            const method = String(fetchOptions.method || 'GET').toUpperCase();
+            const canRetry = retrySafe || method === 'GET' || method === 'HEAD';
+            const retryCount = Math.max(0, Math.min(maxRetries, API_RETRY_DELAYS.length));
+
+            for (let attempt = 0; attempt <= retryCount; attempt++) {
+                const controller = timeoutMs > 0 ? new AbortController() : null;
+                let timedOut = false;
+                const timeoutId = controller ? setTimeout(() => {
+                    timedOut = true;
+                    controller.abort();
+                }, timeoutMs) : null;
+                try {
+                    const requestOptions = controller
+                        ? { ...fetchOptions, signal: controller.signal }
+                        : fetchOptions;
+                    const res = await fetch(url, requestOptions);
+                    const text = await res.text();
+
+                    if (!res.ok) {
+                        let detail = '';
+                        try {
+                            const errorData = text ? JSON.parse(text) : null;
+                            detail = errorData?.detail || errorData?.message || '';
+                        } catch {
+                            detail = text.trim();
+                        }
+
+                        const error = new Error(
+                            `${label}失败（HTTP ${res.status}${detail ? `: ${detail.slice(0, 120)}` : ''}）`
+                        );
+                        error.retryable = RETRYABLE_API_STATUS.has(res.status);
+                        throw error;
+                    }
+
+                    if (!text.trim()) {
+                        throw new Error(`${label}返回为空`);
+                    }
+
+                    try {
+                        return JSON.parse(text);
+                    } catch {
+                        throw new Error(`${label}返回了非 JSON 数据`);
+                    }
+                } catch (e) {
+                    if (timedOut) {
+                        e = new Error(`${label}超时（${Math.round(timeoutMs / 1000)}秒），已停止等待`);
+                        e.retryable = false;
+                    }
+                    lastError = e;
+                    const retryable = canRetry && e.retryable !== false &&
+                        (e.retryable || e.name === 'TypeError');
+                    if (!retryable || attempt >= retryCount) {
+                        throw e;
+                    }
+                    await wait(API_RETRY_DELAYS[attempt]);
+                } finally {
+                    if (timeoutId) clearTimeout(timeoutId);
+                }
+            }
+
+            throw lastError;
+        }
 
         // ============ 状态提示 ============
         function showStatus(msg, type = 'info') {
@@ -966,14 +1109,18 @@
         }
 
         function closeModal(id) {
-            document.getElementById(id).classList.remove('show');
+            const modal = document.getElementById(id);
+            if (modal.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+            modal.classList.remove('show');
+            lastUserInteractionAt = 0;
         }
 
         // ============ API 调用 ============
         async function loadState() {
             try {
-                const res = await fetch(`${API_BASE}/v1/state`);
-                state = await res.json();
+                state = await fetchJson(`${API_BASE}/v1/state`, {}, '加载状态');
                 render();
             } catch (e) {
                 showStatus('加载失败: ' + e.message, 'error');
@@ -982,20 +1129,19 @@
 
         async function saveState() {
             try {
-                await fetch(`${API_BASE}/v1/state`, {
+                await fetchJson(`${API_BASE}/v1/state`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(state)
-                });
+                }, '保存状态');
             } catch (e) {
-                showStatus('保存失败', 'error');
+                showStatus('保存失败: ' + e.message, 'error');
             }
         }
 
         async function getFundName(code) {
             try {
-                const res = await fetch(`${API_BASE}/v1/fund/${code}/name`);
-                const data = await res.json();
+                const data = await fetchJson(`${API_BASE}/v1/fund/${code}/name`, {}, '获取基金名称');
                 return data.name || '';
             } catch {
                 return '';
@@ -1016,25 +1162,34 @@
             btn.disabled = true;
 
             try {
-                const [res, _sigRes] = await Promise.all([
-                    fetch(`${API_BASE}/v1/valuation/batch`, {
+                const requests = [
+                    fetchJson(`${API_BASE}/v1/valuation/batch`, {
                         method: 'POST',
+                        timeoutMs: 50000,
+                        maxRetries: 0,
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ fund_codes: allCodes })
-                    }),
-                    // 同步刷新低频网格信号（静默，不阻塞主流程）
-                    loadStrategyPanel().catch(() => {}),
-                ]);
+                    }, '刷新估值')
+                ];
+                // 只有低频网格页可见时才刷新信号，避免估值页刷新时叠加重请求。
+                if (currentTab === 'strategy') {
+                    requests.push(loadStrategyPanel().catch(() => null));
+                }
 
-                if (!res.ok) throw new Error('请求失败');
-
-                const data = await res.json();
+                const [data] = await Promise.all(requests);
                 valuations = {};
                 (data.items || []).forEach(item => {
                     if (item?.fund_code) valuations[item.fund_code] = item;
                 });
 
+                const pauseReason = getRefreshPauseReason();
+                if (pauseReason) {
+                    showStatus(`数据已获取，${pauseReason}，页面暂不重绘`, 'info');
+                    return;
+                }
+                const viewState = capturePanelView(document.getElementById('sectors'));
                 render();
+                restorePanelView(document.getElementById('sectors'), viewState);
                 lastRefreshTime = new Date();
                 document.getElementById('updateTime').textContent =
                     `更新于 ${lastRefreshTime.toLocaleTimeString()}`;
@@ -1162,8 +1317,7 @@
             modal.classList.add('show');
 
             try {
-                const res = await fetch(`${API_BASE}/v1/fund/${fundCode}/nav-history?days=20`);
-                const data = await res.json();
+                const data = await fetchJson(`${API_BASE}/v1/fund/${fundCode}/nav-history?days=20`, {}, '加载净值历史');
                 const history = data.history || [];
 
                 if (history.length === 0) {
@@ -1244,14 +1398,20 @@
             updateRefreshTimer();
         }
 
-        function _scheduleNextRefresh() {
+        function _scheduleNextRefresh(delayOverride = null) {
             if (autoRefreshTimer) clearTimeout(autoRefreshTimer);
-            const interval = isTradeTime() ? 30000 : 300000; // 交易时段30s，非交易5min
-            autoRefreshTimer = setTimeout(() => {
-                if (state.sectors.some(s => s.funds.length > 0)) {
-                    refreshAll();
+            const interval = delayOverride ?? (isTradeTime() ? 30000 : 300000); // 交易时段30s，非交易5min
+            autoRefreshTimer = setTimeout(async () => {
+                autoRefreshTimer = null;
+                const pauseReason = getRefreshPauseReason();
+                if (!pauseReason && state.sectors.some(s => s.funds.length > 0)) {
+                    if (currentTab === 'strategy') {
+                        await Promise.all([loadRegimeStatus(), loadStrategyPanel()]);
+                    } else {
+                        await refreshAll();
+                    }
                 }
-                _scheduleNextRefresh();
+                _scheduleNextRefresh(pauseReason ? 5000 : null);
             }, interval);
         }
 
@@ -1259,6 +1419,14 @@
             const el = document.getElementById('refreshTimer');
             const dot = document.querySelector('.refresh-status .dot');
             const trading = isTradeTime();
+            const pauseReason = getRefreshPauseReason();
+
+            if (pauseReason) {
+                if (dot) dot.style.background = '#f59e0b';
+                el.textContent = `⏸ ${pauseReason} · 自动刷新已暂停`;
+                setTimeout(updateRefreshTimer, 1000);
+                return;
+            }
 
             if (trading) {
                 if (dot) dot.style.background = '#10b981';
@@ -1437,13 +1605,11 @@
             }
 
             try {
-                const res = await fetch(`${API_BASE}/v1/etf-link`, {
+                await fetchJson(`${API_BASE}/v1/etf-link`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ link_code: linkCode, etf_code: etfCode })
-                });
-
-                if (!res.ok) throw new Error('设置失败');
+                }, '设置 ETF 映射');
 
                 showStatus(`已设置 ${linkCode} -> ${etfCode}`, 'success');
                 closeModal('etfLinkModal');
@@ -1459,7 +1625,7 @@
             const linkCode = document.getElementById('etfLinkCode').value.trim();
 
             try {
-                await fetch(`${API_BASE}/v1/etf-link/${linkCode}`, { method: 'DELETE' });
+                await fetchJson(`${API_BASE}/v1/etf-link/${linkCode}`, { method: 'DELETE' }, '清除 ETF 映射');
                 showStatus(`已清除 ${linkCode} 的映射`, 'success');
                 closeModal('etfLinkModal');
                 await refreshAll();
@@ -1472,8 +1638,7 @@
         async function addToStrategy(fundCode) {
             // 先检查是否已在持仓中（包括空仓观察）
             try {
-                const posRes = await fetch(`${API_BASE}/v1/positions`);
-                const posData = await posRes.json();
+                const posData = await fetchJson(`${API_BASE}/v1/positions`, {}, '加载持仓');
                 const funds = posData.funds || {};
                 if (funds[fundCode]) {
                     showStatus(`${fundCode} 已在低频网格中`, 'info');
@@ -1490,8 +1655,7 @@
             const displayCode = fundCode.includes('__') ? fundCode.replace('__', ' [') + ']' : fundCode;
             if (!confirm(`确定将 ${displayCode} 从低频网格移除？（会删除所有持仓记录）`)) return;
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('移除失败');
+                await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}`, { method: 'DELETE' }, '移除持仓');
                 showStatus(`已移除 ${displayCode}`, 'success');
                 loadStrategyPanel();
             } catch (e) {
@@ -1510,8 +1674,7 @@
 
         async function loadRegimeStatus() {
             try {
-                const res = await fetch(`${API_BASE}/v1/market-regime`);
-                const data = await res.json();
+                const data = await fetchJson(`${API_BASE}/v1/market-regime`, {}, '加载行情模式');
                 _currentRegime = data.regime || 'neutral';
                 if (_currentRegime === 'bull') _currentRegime = 'neutral';  // v5.17: bull已禁用
                 _regimeAuto = data.auto !== false;
@@ -1522,11 +1685,11 @@
 
         async function setRegimeManual(regime) {
             try {
-                await fetch(`${API_BASE}/v1/market-regime`, {
+                await fetchJson(`${API_BASE}/v1/market-regime`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ regime, auto: true, manual_override: true }),
-                });
+                }, '设置行情模式');
                 _currentRegime = regime;
                 _regimeManual = true;
                 updateRegimeUI();
@@ -1538,11 +1701,11 @@
             try {
                 if (_regimeManual) {
                     // 恢复自动
-                    await fetch(`${API_BASE}/v1/market-regime`, {
+                    await fetchJson(`${API_BASE}/v1/market-regime`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ regime: 'neutral', auto: true, manual_override: false }),
-                    });
+                    }, '恢复自动行情模式');
                     _regimeManual = false;
                 }
                 await loadRegimeStatus();
@@ -1567,19 +1730,40 @@
         }
 
         async function loadStrategyPanel() {
+            if (strategyLoadPromise) {
+                return strategyLoadPromise;
+            }
+
+            strategyLoadPromise = loadStrategyPanelInternal();
+            try {
+                return await strategyLoadPromise;
+            } finally {
+                strategyLoadPromise = null;
+            }
+        }
+
+        async function loadStrategyPanelInternal() {
             const panel = document.getElementById('strategyPanel');
-            panel.innerHTML = '<div style="text-align:center;padding:20px;color:#9ca3af;"><span class="loading"></span>加载信号中...</div>';
+            const hadContent = Boolean(panel.querySelector('.signal-card, .strategy-group'));
+            const viewState = capturePanelView(panel);
+            if (!hadContent) {
+                panel.innerHTML = '<div style="text-align:center;padding:20px;color:#9ca3af;"><span class="loading"></span>加载信号中...</div>';
+            }
 
             try {
                 // 并行获取信号 + 持仓
-                const [sigRes, posRes] = await Promise.all([
-                    fetch(`${API_BASE}/v1/strategy/signals`),
-                    fetch(`${API_BASE}/v1/positions`),
+                const [sigData, posData] = await Promise.all([
+                    fetchJson(`${API_BASE}/v1/strategy/signals`, {}, '加载网格信号'),
+                    fetchJson(`${API_BASE}/v1/positions`, {}, '加载持仓'),
                 ]);
-                const sigData = await sigRes.json();
-                const posData = await posRes.json();
                 const signals = sigData.signals || [];
                 const funds = posData.funds || {};
+
+                const pauseReason = getRefreshPauseReason();
+                if (hadContent && pauseReason) {
+                    showStatus(`信号已获取，${pauseReason}，页面暂不重绘`, 'info');
+                    return;
+                }
 
                 if (signals.length === 0 && Object.keys(funds).length === 0) {
                     panel.innerHTML = `
@@ -1757,7 +1941,7 @@
                         regimeBadge = `<span style="font-size:10px;margin-left:2px;" title="${rSrc}识别">🐻</span>`;
                     }
 
-                    let html = `<div class="signal-card">
+                    let html = `<div class="signal-card" data-fund-key="${escapeHtml(code)}">
                         <div class="signal-card-header">
                             <div class="fund-info">
                                 <span class="code" onclick="showNavHistory('${realCode}')">${realCode}</span>
@@ -2160,8 +2344,16 @@
                     return html;
                 }
                 panel.innerHTML = html;
+                restorePanelView(panel, viewState);
+                lastRefreshTime = new Date();
+                document.getElementById('updateTime').textContent =
+                    `更新于 ${lastRefreshTime.toLocaleTimeString()}`;
             } catch (e) {
-                panel.innerHTML = `<div style="text-align:center;padding:20px;color:#ef4444;">加载失败: ${e.message}</div>`;
+                if (hadContent) {
+                    showStatus('信号刷新失败: ' + e.message, 'error');
+                } else {
+                    panel.innerHTML = `<div style="text-align:center;padding:20px;color:#ef4444;">加载失败: ${escapeHtml(e.message)}<br><button class="btn-primary" onclick="loadStrategyPanel()" style="margin-top:8px;padding:4px 12px;font-size:11px;">重试</button></div>`;
+                }
             }
 
         }
@@ -2234,16 +2426,11 @@
 
         async function submitSetOwner(oldKey, newOwner) {
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(oldKey)}/rename`, {
+                const data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(oldKey)}/rename`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ new_owner: newOwner })
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || '设置失败');
-                }
-                const data = await res.json();
+                }, '设置持仓标签');
                 // 同步更新前端 localStorage 中的分组映射
                 const groupData = loadStrategyGroups();
                 const oldGroupId = groupData.fund_group_map[oldKey];
@@ -2316,16 +2503,11 @@
             if (amount === 0) {
                 try {
                     const fundKey = owner ? `${code}__${owner}` : code;
-                    const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(code)}/watch`, {
+                    const data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(code)}/watch`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ max_position: 5000, note: note || '空仓待建仓', owner: owner })
-                    });
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.detail || '添加失败');
-                    }
-                    const data = await res.json();
+                    }, '添加观察');
                     const ownerLabel = owner ? ` [${owner}]` : '';
                     if (data.status === 'already_exists') {
                         showStatus(`${code}${ownerLabel} 已在低频网格中`, 'info');
@@ -2354,7 +2536,7 @@
                 const _modal = document.getElementById('buyModal');
                 const isRebuy = _modal.dataset.isRebuy === 'true';
                 const pendingRebuyId = _modal.dataset.pendingRebuyId || null;
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(code)}/buy`, {
+                const data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(code)}/buy`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2363,12 +2545,7 @@
                         is_rebuy: isRebuy,
                         pending_rebuy_id: pendingRebuyId,
                     })
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || '买入失败');
-                }
-                const data = await res.json();
+                }, '买入');
                 const ownerLabel = owner ? ` [${owner}]` : '';
                 const rebuyTag = isRebuy ? ' [回补]' : '';
                 showStatus(`买入成功: ${code}${ownerLabel}${rebuyTag} · ${data.batch?.id}`, 'success');
@@ -2428,8 +2605,7 @@
             document.getElementById('sellFifoInfo').style.display = 'block';
 
             // 加载批次信息用于 FIFO 预览
-            fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}`)
-                .then(r => r.json())
+            fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}`, {}, '加载卖出批次')
                 .then(data => {
                     const batches = (data.batches || []).filter(b => b.status === 'holding');
                     batches.sort((a, b) => a.buy_date.localeCompare(b.buy_date));
@@ -2480,8 +2656,7 @@
             select.innerHTML = '<option value="">加载中...</option>';
             _sellBatchesCache = [];
 
-            fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}`)
-                .then(r => r.json())
+            fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}`, {}, '加载卖出批次')
                 .then(data => {
                     const batches = (data.batches || []).filter(b => b.status === 'holding');
                     _sellBatchesCache = batches;
@@ -2536,7 +2711,7 @@
             if (!sellShares || sellShares <= 0) { showStatus('请输入有效卖出份额', 'error'); return; }
 
             try {
-                let res, data, statusMsg;
+                let data, statusMsg;
 
                 if (mode === 'fifo') {
                     // FIFO 模式：调用新接口，自动按先进先出拆分
@@ -2544,16 +2719,11 @@
                     if (sellNav) body.sell_nav = sellNav;
                     if (sellDate) body.sell_date = sellDate;
 
-                    res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(code)}/sell-fifo`, {
+                    data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(code)}/sell-fifo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body)
-                    });
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.detail || '卖出失败');
-                    }
-                    data = await res.json();
+                    }, 'FIFO 卖出');
                     statusMsg = `FIFO卖出成功: ${data.total_sell_shares}份（涉及${data.batch_count}个批次）`;
                     if (data.nav_pending) {
                         statusMsg += ' · 净值待确认';
@@ -2570,16 +2740,11 @@
                     if (sellNav) body.sell_nav = sellNav;
                     if (sellDate) body.sell_date = sellDate;
 
-                    res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(code)}/sell`, {
+                    data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(code)}/sell`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body)
-                    });
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.detail || '卖出失败');
-                    }
-                    data = await res.json();
+                    }, '卖出');
                     statusMsg = `卖出成功: ${data.sell_shares}份（持有${data.hold_days}天，费率${data.sell_fee_rate}%）`;
                     if (data.nav_pending) {
                         statusMsg += ' · 净值待确认';
@@ -2600,8 +2765,7 @@
         async function deleteBatch(fundCode, batchId) {
             if (!confirm(`确定删除批次 ${batchId}？此操作不可恢复。`)) return;
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/batch/${batchId}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('删除失败');
+                await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/batch/${batchId}`, { method: 'DELETE' }, '删除批次');
                 showStatus(`已删除 ${batchId}`, 'success');
                 loadStrategyPanel();
             } catch (e) {
@@ -2612,8 +2776,7 @@
         async function deleteSellRecord(fundCode, sellRecordId) {
             if (!confirm(`确定删除卖出记录 ${sellRecordId}？此操作不可恢复。`)) return;
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/sell-record/${sellRecordId}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('删除失败');
+                await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/sell-record/${sellRecordId}`, { method: 'DELETE' }, '删除卖出记录');
                 showStatus(`已删除卖出记录 ${sellRecordId}`, 'success');
                 loadStrategyPanel();
             } catch (e) {
@@ -2627,16 +2790,11 @@
             const nav = parseFloat(navStr);
             if (!nav || nav <= 0) { showStatus('请输入有效净值', 'error'); return; }
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/buy-nav`, {
+                const data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/buy-nav`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ batch_id: batchId, nav: nav })
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || '补录失败');
-                }
-                const data = await res.json();
+                }, '补录买入净值');
                 showStatus(`买入净值已补录: ${data.batch.nav.toFixed(4)} · 份额 ${data.batch.shares.toFixed(2)}`, 'success');
                 loadStrategyPanel();
             } catch (e) {
@@ -2650,16 +2808,11 @@
             const nav = parseFloat(navStr);
             if (!nav || nav <= 0) { showStatus('请输入有效净值', 'error'); return; }
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/sell-nav`, {
+                const data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/sell-nav`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sell_record_id: sellRecordId, sell_nav: nav })
-                });
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.detail || '补录失败');
-                }
-                const data = await res.json();
+                }, '补录卖出净值');
                 const r = data.record;
                 const profitStr = r.profit >= 0 ? `+¥${r.profit.toFixed(2)}` : `-¥${Math.abs(r.profit).toFixed(2)}`;
                 showStatus(`净值已补录: ${r.sell_nav.toFixed(4)} · ${profitStr} (${r.profit_pct}%)`, 'success');
@@ -2675,12 +2828,11 @@
             const newMax = parseInt(input);
             if (!newMax || newMax <= 0) { showStatus('请输入有效金额', 'error'); return; }
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/config`, {
+                await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/config`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ max_position: newMax })
-                });
-                if (!res.ok) throw new Error('更新失败');
+                }, '更新持仓上限');
                 showStatus(`上限已更新为 ¥${newMax}`, 'success');
                 loadStrategyPanel();
             } catch (e) {
@@ -2713,12 +2865,11 @@
                     if (isNaN(r)) throw new Error(`无效费率: ${s}`);
                     return { days: d > 0 ? d : null, rate: r };
                 });
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/fee-schedule`, {
+                await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/fee-schedule`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ schedule })
-                });
-                if (!res.ok) throw new Error('更新失败');
+                }, '更新费率');
                 showStatus(`费率已更新`, 'success');
                 loadStrategyPanel();
             } catch (e) {
@@ -3300,6 +3451,14 @@
         }
 
         // ============ 初始化 ============
+        document.addEventListener('input', markUserInteraction, true);
+        document.addEventListener('change', markUserInteraction, true);
+        document.addEventListener('focusin', event => {
+            if (event.target.matches?.('input, textarea, select') || event.target.isContentEditable) {
+                markUserInteraction();
+            }
+        }, true);
+
         window.onload = async () => {
             await loadState();
             if (state.sectors.some(s => s.funds.length > 0)) {
@@ -3350,8 +3509,7 @@
             document.getElementById('volSensModal').classList.add('show');
 
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/vol-sensitivity`);
-                const data = await res.json();
+                const data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/vol-sensitivity`, {}, '加载灵敏度');
                 const slider = document.getElementById('volSensSlider');
                 const display = document.getElementById('volSensDisplay');
                 slider.value = data.effective;
@@ -3378,12 +3536,11 @@
             const fundCode = document.getElementById('volSensFundCode').value;
             const value = parseFloat(document.getElementById('volSensSlider').value);
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/vol-sensitivity`, {
+                await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/vol-sensitivity`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sensitivity: value })
-                });
-                if (!res.ok) throw new Error('设置失败');
+                }, '设置灵敏度');
                 showStatus(`灵敏度已设为 ${value.toFixed(2)}×`, 'success');
                 closeModal('volSensModal');
                 loadStrategyPanel();
@@ -3395,10 +3552,9 @@
         async function clearVolSensitivity() {
             const fundCode = document.getElementById('volSensFundCode').value;
             try {
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/vol-sensitivity`, {
+                await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/vol-sensitivity`, {
                     method: 'DELETE'
-                });
-                if (!res.ok) throw new Error('清除失败');
+                }, '恢复自动灵敏度');
                 showStatus('已恢复自动校准', 'success');
                 closeModal('volSensModal');
                 loadStrategyPanel();
@@ -3413,11 +3569,9 @@
                 const btn = event.target;
                 btn.textContent = '校准中...';
                 btn.disabled = true;
-                const res = await fetch(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/vol-sensitivity/calibrate`, {
+                const data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(fundCode)}/vol-sensitivity/calibrate`, {
                     method: 'POST'
-                });
-                if (!res.ok) throw new Error('校准失败');
-                const data = await res.json();
+                }, '重新校准灵敏度');
                 showStatus(`重新校准完成: ${data.effective.toFixed(2)}×`, 'success');
                 // 刷新弹窗信息
                 showVolSensitivityModal(fundCode);

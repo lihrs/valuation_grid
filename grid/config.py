@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Tuple
 
-from positions import load_positions, save_positions, parse_fund_key
+from positions import load_positions, save_positions, parse_fund_key, position_write
 from valuation.core import calculate_valuation
 from valuation.providers import get_fund_nav_history
 
@@ -193,6 +193,23 @@ DEFAULT_VOL_SENSITIVITY = 1.0
 _VOL_SENS_CACHE_TTL = 3600 * 6  # 6小时
 
 
+@position_write
+def _cache_auto_vol_sensitivity(fund_code: str, calibrated: float) -> tuple:
+    """只在计算完成后短暂加锁，避免网络请求期间阻塞持仓读写。"""
+    data = load_positions()
+    fund = data.get("funds", {}).get(fund_code)
+    if not fund:
+        return DEFAULT_VOL_SENSITIVITY, "default"
+    if fund.get("vol_sensitivity") is not None:
+        value = max(0.5, min(1.5, fund["vol_sensitivity"]))
+        return value, "manual"
+
+    fund["vol_sensitivity_auto"] = calibrated
+    fund["vol_sensitivity_auto_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_positions(data)
+    return max(0.5, min(1.5, calibrated)), "auto"
+
+
 def _get_vol_sensitivity(fund_code: str) -> tuple:
     """
     获取基金的波动率灵敏度系数。优先级：
@@ -226,10 +243,7 @@ def _get_vol_sensitivity(fund_code: str) -> tuple:
     # 3. 实时计算并缓存
     calibrated = auto_calibrate_vol_sensitivity(fund_code)
     if calibrated is not None:
-        fund["vol_sensitivity_auto"] = calibrated
-        fund["vol_sensitivity_auto_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        save_positions(data)
-        return max(0.5, min(1.5, calibrated)), "auto"
+        return _cache_auto_vol_sensitivity(fund_code, calibrated)
 
     return DEFAULT_VOL_SENSITIVITY, "default"
 
@@ -325,6 +339,7 @@ def auto_calibrate_vol_sensitivity(fund_code: str) -> Optional[float]:
     return sensitivity
 
 
+@position_write
 def update_vol_sensitivity(fund_code: str, sensitivity: float) -> bool:
     """用户手动设置波动率灵敏度（覆盖自动校准值）"""
     sensitivity = max(0.5, min(1.5, sensitivity))
@@ -337,6 +352,7 @@ def update_vol_sensitivity(fund_code: str, sensitivity: float) -> bool:
     return True
 
 
+@position_write
 def clear_vol_sensitivity(fund_code: str) -> bool:
     """清除手动设置和自动缓存，下次信号生成时重新校准"""
     data = load_positions()
@@ -475,6 +491,7 @@ def _auto_detect_regime(trend_ctx: dict) -> str:
     return "neutral"
 
 
+@position_write
 def _resolve_regime(trend_ctx: dict = None) -> str:
     """
     解析当前生效的行情模式。
@@ -521,6 +538,7 @@ def _get_regime_params(regime: str) -> dict:
     return REGIME_PARAMS.get(regime, REGIME_PARAMS["neutral"]).copy()
 
 
+@position_write
 def set_market_regime(regime: str, auto: bool = True, manual: bool = False) -> dict:
     """
     设置行情模式（供API调用）。

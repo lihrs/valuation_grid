@@ -1,12 +1,16 @@
 """
 app.py - API入口：/state + /valuation + /fund/name + /position + /strategy
 """
+import os
 import threading
+import time
 from contextlib import asynccontextmanager
+from datetime import datetime
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
@@ -27,7 +31,8 @@ from positions import (
     make_fund_key, parse_fund_key, rename_fund_key,
     add_watch_fund,
     confirm_buy_nav,
-    auto_fill_nav
+    auto_fill_nav,
+    PositionDataError,
 )
 from skills.export_image import export_all_sector_images
 
@@ -44,6 +49,24 @@ from grid import (
 # 启动时刷新持仓缓存（后台线程，不阻塞服务就绪）
 # ============================================================
 
+def _refresh_holdings_when_idle():
+    """交易时段优先保障实时估值，持仓全量刷新延后到收盘后。"""
+    now = datetime.now()
+    hhmm = now.hour * 100 + now.minute
+    if now.weekday() < 5 and 850 <= hhmm < 1520:
+        refresh_at = now.replace(hour=15, minute=20, second=0, microsecond=0)
+        delay = max(30, (refresh_at - now).total_seconds())
+        print(f"[Startup] 交易时段不刷新全量持仓，将延后 {int(delay)} 秒")
+    else:
+        delay = 30
+
+    time.sleep(delay)
+    try:
+        refresh_stale_holdings()
+    except Exception as exc:
+        print(f"[Startup] 后台持仓刷新异常: {exc}")
+
+
 @asynccontextmanager
 async def lifespan(app):
     # v5.19: 启动时自动补录缺失净值
@@ -51,7 +74,7 @@ async def lifespan(app):
         auto_fill_nav()
     except Exception as e:
         print(f"[Startup] 净值自动补录异常: {e}")
-    t = threading.Thread(target=refresh_stale_holdings, daemon=True)
+    t = threading.Thread(target=_refresh_holdings_when_idle, daemon=True)
     t.start()
     yield
 
@@ -61,6 +84,16 @@ app = FastAPI(
     version="2.2.0",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(PositionDataError)
+async def position_data_error_handler(_request, exc: PositionDataError):
+    """持仓异常只让当前请求失败，不允许进程退出或把错误伪装成空数据。"""
+    print(f"[Position] 请求已安全中止: {exc}")
+    return JSONResponse(
+        status_code=503,
+        content={"detail": str(exc), "error": "position_data_unavailable"},
+    )
 
 # CORS
 app.add_middleware(
@@ -627,7 +660,6 @@ def cleanup_pending_rebuys_api():
 
 @app.get("/")
 async def serve_index():
-    import os
     return FileResponse(os.path.join(os.path.dirname(__file__), "demo.html"))
 
 
@@ -637,5 +669,48 @@ async def favicon():
     return Response(content="", media_type="image/x-icon")
 
 
+def _acquire_app_instance_lock():
+    """阻止第二个 app.py 在端口绑定前执行启动任务。"""
+    lock_dir = Path(__file__).parent / "logs"
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = lock_dir / "valuation-grid-app.lock"
+    handle = open(lock_path, "a+b")
+    handle.seek(0, 2)
+    if handle.tell() == 0:
+        handle.write(b"\0")
+        handle.flush()
+    handle.seek(0)
+
+    try:
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return handle
+    except OSError:
+        handle.close()
+        return None
+
+
+def _release_app_instance_lock(handle):
+    handle.seek(0)
+    if os.name == "nt":
+        import msvcrt
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    handle.close()
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    _instance_lock = _acquire_app_instance_lock()
+    if _instance_lock is None:
+        print("[Startup] valuation-grid app.py 已在运行，拒绝启动第二个实例")
+        raise SystemExit(2)
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+    finally:
+        _release_app_instance_lock(_instance_lock)

@@ -340,13 +340,17 @@ def get_holdings(fund_code: str, force_refresh: bool = False) -> dict:
     _ensure_cache_dir()
     cache_path = _get_holdings_cache_path(fund_code)
 
-    if not force_refresh and _is_holdings_cache_valid(cache_path):
+    # 实时估值优先使用已有缓存；过期缓存由后台刷新任务更新，不能在页面请求中
+    # 同步抓取数百只基金，否则上游限频时整批估值会卡住数分钟。
+    if not force_refresh and cache_path.exists():
         try:
             with open(cache_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                if data.get("positions"):
-                    if data.get("is_etf_link") or data.get("parsed_weight", 0) > 30:
-                        return data
+            if data.get("positions") or data.get("_no_holdings"):
+                if not _is_holdings_cache_valid(cache_path):
+                    data = dict(data)
+                    data["_stale"] = True
+                return data
         except:
             pass
 
@@ -868,6 +872,7 @@ def get_fundgz_estimation(fund_code: str) -> Optional[dict]:
 
 _nav_history_cache: Dict[str, dict] = {}  # key=fund_code, value={"data": list, "ts": float}
 _NAV_HISTORY_TTL = 3600  # 1小时缓存
+_NAV_HISTORY_ERROR_TTL = 60  # 失败结果短缓存，避免同一批请求立即重复轰炸上游
 _NAV_HISTORY_FETCH_SIZE = 30  # 固定请求30条，缓存完整数据
 
 
@@ -889,11 +894,12 @@ def get_fund_nav_history(fund_code: str, days: int = 15) -> list:
     cache_key = fund_code
     if cache_key in _nav_history_cache:
         cached = _nav_history_cache[cache_key]
-        if time.time() - cached["ts"] < _NAV_HISTORY_TTL:
-            # 缓存数据够用，直接截取
-            if len(cached["data"]) >= days:
-                return cached["data"][:days]
-            # 缓存数据不够，重新拉取
+        ttl = _NAV_HISTORY_ERROR_TTL if cached.get("error") else _NAV_HISTORY_TTL
+        if time.time() - cached["ts"] < ttl:
+            cached_data = cached.get("data", [])
+            if (cached.get("error") or len(cached_data) >= days or
+                    cached.get("fetch_size", 0) >= days):
+                return cached_data[:days]
 
     # 请求时用 max(days, _NAV_HISTORY_FETCH_SIZE) 确保拿够
     fetch_size = max(days, _NAV_HISTORY_FETCH_SIZE)
@@ -937,10 +943,20 @@ def get_fund_nav_history(fund_code: str, days: int = 15) -> list:
             })
 
         # 写入缓存
-        _nav_history_cache[cache_key] = {"data": result, "ts": time.time()}
+        _nav_history_cache[cache_key] = {
+            "data": result,
+            "ts": time.time(),
+            "fetch_size": fetch_size,
+        }
         # 静默成功，仅失败时输出日志
         return result[:days]
 
     except Exception as e:
         print(f"[NavHistory] {fund_code} 获取失败: {e}")
+        _nav_history_cache[cache_key] = {
+            "data": [],
+            "ts": time.time(),
+            "fetch_size": fetch_size,
+            "error": True,
+        }
         return []

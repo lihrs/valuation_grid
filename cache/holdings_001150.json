@@ -1,6 +1,6 @@
 {
   "fund_code": "001150",
-  "fund_name": "融通互联网传媒灵活配置混合",
+  "fund_name": "融通互联网传媒灵活配置混合A",
   "holdings_asof_date": "2026-03-31",
   "stock_total_weight": 92.89,
   "parsed_weight": 52.29,
@@ -62,6 +62,6 @@
       "weight": 1.49
     }
   ],
-  "fetched_at": "2026-06-04 13:54:36",
+  "fetched_at": "2026-07-04 01:05:48",
   "data_source": "eastmoney"
 }

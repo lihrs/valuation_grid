@@ -1,0 +1,62 @@
+{
+  "fund_code": "000001",
+  "fund_name": "华夏成长混合",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 72.51,
+  "parsed_weight": 27.15,
+  "missing_weight": 45.36,
+  "positions": [
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 4.31
+    },
+    {
+      "stock_code": "688012",
+      "stock_name": "中微公司",
+      "weight": 3.07
+    },
+    {
+      "stock_code": "688347",
+      "stock_name": "华虹公司",
+      "weight": 2.8
+    },
+    {
+      "stock_code": "002371",
+      "stock_name": "北方华创",
+      "weight": 2.78
+    },
+    {
+      "stock_code": "688019",
+      "stock_name": "安集科技",
+      "weight": 2.67
+    },
+    {
+      "stock_code": "688041",
+      "stock_name": "海光信息",
+      "weight": 2.48
+    },
+    {
+      "stock_code": "688120",
+      "stock_name": "华海清科",
+      "weight": 2.38
+    },
+    {
+      "stock_code": "688256",
+      "stock_name": "寒武纪",
+      "weight": 2.34
+    },
+    {
+      "stock_code": "688072",
+      "stock_name": "拓荆科技",
+      "weight": 2.21
+    },
+    {
+      "stock_code": "688361",
+      "stock_name": "中科飞测",
+      "weight": 2.11
+    }
+  ],
+  "fetched_at": "2026-07-04 10:40:37",
+  "data_source": "eastmoney"
+}

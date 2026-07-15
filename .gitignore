@@ -23,3 +23,9 @@ market_summary_log.txt
 
 # Log files
 logs/
+
+# Runtime position locks, backups and interrupted atomic writes
+data/.positions.lock
+data/positions.backup.json
+data/positions.tmp
+data/.positions.*.tmp

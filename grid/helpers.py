@@ -8,7 +8,10 @@ import math
 from datetime import datetime
 from typing import Optional, List, Tuple
 
-from positions import get_sell_fee_rate, load_positions, save_positions, parse_fund_key
+from positions import (
+    get_sell_fee_rate, load_positions, save_positions, parse_fund_key,
+    position_write,
+)
 from valuation.core import _is_market_closed
 
 from .config import (
@@ -757,6 +760,7 @@ def _calc_peak_profit(batch: dict, nav_history: list) -> float:
     return round((peak_nav / buy_nav - 1) * 100, 2)
 
 
+@position_write
 def _update_batch_peak_nav(fund_code: str, batch_id: str, current_nav: float):
     data = load_positions()
     fund = data.get("funds", {}).get(fund_code)

@@ -1,0 +1,62 @@
+{
+  "fund_code": "110011",
+  "fund_name": "易方达优质精选混合(QDII)",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 93.96,
+  "parsed_weight": 82.06,
+  "missing_weight": 11.9,
+  "positions": [
+    {
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "weight": 9.92
+    },
+    {
+      "stock_code": "000858",
+      "stock_name": "五粮液",
+      "weight": 9.9
+    },
+    {
+      "stock_code": "000568",
+      "stock_name": "泸州老窖",
+      "weight": 9.87
+    },
+    {
+      "stock_code": "01179",
+      "stock_name": "华住集团-S",
+      "weight": 9.84
+    },
+    {
+      "stock_code": "00700",
+      "stock_name": "腾讯控股",
+      "weight": 9.56
+    },
+    {
+      "stock_code": "600809",
+      "stock_name": "山西汾酒",
+      "weight": 9.38
+    },
+    {
+      "stock_code": "09988",
+      "stock_name": "阿里巴巴-W",
+      "weight": 8.04
+    },
+    {
+      "stock_code": "00883",
+      "stock_name": "中国海洋石油",
+      "weight": 6.99
+    },
+    {
+      "stock_code": "002027",
+      "stock_name": "分众传媒",
+      "weight": 4.46
+    },
+    {
+      "stock_code": "09987",
+      "stock_name": "百胜中国",
+      "weight": 4.1
+    }
+  ],
+  "fetched_at": "2026-07-04 10:40:45",
+  "data_source": "eastmoney"
+}

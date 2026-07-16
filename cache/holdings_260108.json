@@ -1,0 +1,82 @@
+{
+  "fund_code": "260108",
+  "fund_name": "景顺长城新兴成长混合A",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 91.76,
+  "parsed_weight": 77.27,
+  "missing_weight": 14.49,
+  "positions": [
+    {
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "weight": 9.93
+    },
+    {
+      "stock_code": "002311",
+      "stock_name": "海大集团",
+      "weight": 9.23
+    },
+    {
+      "stock_code": "000333",
+      "stock_name": "美的集团",
+      "weight": 7.48
+    },
+    {
+      "stock_code": "603259",
+      "stock_name": "药明康德",
+      "weight": 7.39
+    },
+    {
+      "stock_code": "601888",
+      "stock_name": "中国中免",
+      "weight": 7.37
+    },
+    {
+      "stock_code": "600809",
+      "stock_name": "山西汾酒",
+      "weight": 7.11
+    },
+    {
+      "stock_code": "603899",
+      "stock_name": "晨光股份",
+      "weight": 5.56
+    },
+    {
+      "stock_code": "000858",
+      "stock_name": "五粮液",
+      "weight": 5.52
+    },
+    {
+      "stock_code": "000568",
+      "stock_name": "泸州老窖",
+      "weight": 5.12
+    },
+    {
+      "stock_code": "300760",
+      "stock_name": "迈瑞医疗",
+      "weight": 4.96
+    },
+    {
+      "stock_code": "000596",
+      "stock_name": "古井贡酒",
+      "weight": 4.11
+    },
+    {
+      "stock_code": "300015",
+      "stock_name": "爱尔眼科",
+      "weight": 1.5
+    },
+    {
+      "stock_code": "603605",
+      "stock_name": "珀莱雅",
+      "weight": 1.19
+    },
+    {
+      "stock_code": "603317",
+      "stock_name": "天味食品",
+      "weight": 0.8
+    }
+  ],
+  "fetched_at": "2026-07-04 10:40:48",
+  "data_source": "eastmoney"
+}

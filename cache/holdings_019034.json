@@ -1,0 +1,62 @@
+{
+  "fund_code": "019034",
+  "fund_name": "易方达高端制造混合发起式C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 90.58,
+  "parsed_weight": 43.82,
+  "missing_weight": 46.76,
+  "positions": [
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 5.9
+    },
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 5.42
+    },
+    {
+      "stock_code": "300408",
+      "stock_name": "三环集团",
+      "weight": 5.38
+    },
+    {
+      "stock_code": "600487",
+      "stock_name": "亨通光电",
+      "weight": 4.93
+    },
+    {
+      "stock_code": "00175",
+      "stock_name": "吉利汽车",
+      "weight": 4.89
+    },
+    {
+      "stock_code": "600522",
+      "stock_name": "中天科技",
+      "weight": 4.4
+    },
+    {
+      "stock_code": "300750",
+      "stock_name": "宁德时代",
+      "weight": 3.93
+    },
+    {
+      "stock_code": "00857",
+      "stock_name": "中国石油股份",
+      "weight": 3.44
+    },
+    {
+      "stock_code": "02099",
+      "stock_name": "中国黄金国际",
+      "weight": 3.06
+    },
+    {
+      "stock_code": "002371",
+      "stock_name": "北方华创",
+      "weight": 2.47
+    }
+  ],
+  "fetched_at": "2026-06-22 22:06:21",
+  "data_source": "eastmoney"
+}

@@ -1,0 +1,72 @@
+{
+  "fund_code": "005827",
+  "fund_name": "易方达蓝筹精选混合",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 93.81,
+  "parsed_weight": 89.76,
+  "missing_weight": 4.05,
+  "positions": [
+    {
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "weight": 9.91
+    },
+    {
+      "stock_code": "000858",
+      "stock_name": "五粮液",
+      "weight": 9.9
+    },
+    {
+      "stock_code": "000568",
+      "stock_name": "泸州老窖",
+      "weight": 9.87
+    },
+    {
+      "stock_code": "00700",
+      "stock_name": "腾讯控股",
+      "weight": 9.6
+    },
+    {
+      "stock_code": "09987",
+      "stock_name": "百胜中国",
+      "weight": 9.56
+    },
+    {
+      "stock_code": "00883",
+      "stock_name": "中国海洋石油",
+      "weight": 9.28
+    },
+    {
+      "stock_code": "600809",
+      "stock_name": "山西汾酒",
+      "weight": 9.27
+    },
+    {
+      "stock_code": "09988",
+      "stock_name": "阿里巴巴-W",
+      "weight": 9.22
+    },
+    {
+      "stock_code": "06618",
+      "stock_name": "京东健康",
+      "weight": 4.39
+    },
+    {
+      "stock_code": "002027",
+      "stock_name": "分众传媒",
+      "weight": 3.96
+    },
+    {
+      "stock_code": "300832",
+      "stock_name": "新产业",
+      "weight": 2.47
+    },
+    {
+      "stock_code": "688617",
+      "stock_name": "惠泰医疗",
+      "weight": 2.33
+    }
+  ],
+  "fetched_at": "2026-07-04 10:40:39",
+  "data_source": "eastmoney"
+}

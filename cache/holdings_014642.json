@@ -1,0 +1,62 @@
+{
+  "fund_code": "014642",
+  "fund_name": "摩根新兴动力混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 93.28,
+  "parsed_weight": 53.98,
+  "missing_weight": 39.3,
+  "positions": [
+    {
+      "stock_code": "002384",
+      "stock_name": "东山精密",
+      "weight": 9.36
+    },
+    {
+      "stock_code": "300750",
+      "stock_name": "宁德时代",
+      "weight": 8.28
+    },
+    {
+      "stock_code": "300390",
+      "stock_name": "天华新能",
+      "weight": 7.89
+    },
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 6.92
+    },
+    {
+      "stock_code": "300014",
+      "stock_name": "亿纬锂能",
+      "weight": 4.48
+    },
+    {
+      "stock_code": "002594",
+      "stock_name": "比亚迪",
+      "weight": 4.17
+    },
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 3.7
+    },
+    {
+      "stock_code": "605196",
+      "stock_name": "华通线缆",
+      "weight": 3.26
+    },
+    {
+      "stock_code": "603799",
+      "stock_name": "华友钴业",
+      "weight": 2.99
+    },
+    {
+      "stock_code": "300476",
+      "stock_name": "胜宏科技",
+      "weight": 2.93
+    }
+  ],
+  "fetched_at": "2026-06-22 22:06:26",
+  "data_source": "eastmoney"
+}

@@ -8,58 +8,22 @@ import time
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.request import urlopen, Request, install_opener, build_opener, ProxyHandler
+from urllib.error import URLError, HTTPError
 from typing import Dict, List, Optional, Tuple
-import urllib3
 
-# === 连接池复用 ===
-_http_pool = urllib3.PoolManager(
-    maxsize=20,  # 最大连接数
-    retries=2,   # 失败重试次数
-    timeout=urllib3.Timeout(connect=5, read=5)
-)
+# 强制所有 urlopen 请求不走系统代理，避免梯子干扰
+install_opener(build_opener(ProxyHandler({})))
 
 # === 配置常量 ===
 CACHE_DIR = Path(__file__).parent.parent / "cache"
-QUOTES_TTL_SECONDS = 60  # 行情缓存 TTL（从 30s 延长到 60s）
-REQUEST_TIMEOUT = 5  # 请求超时（从 8s 缩短到 5s，快速失败）
+QUOTES_TTL_SECONDS = 30
+REQUEST_TIMEOUT = 8
 HOLDINGS_CACHE_DAYS = 30  # 持仓缓存天数（唯一控制持仓缓存有效期的常量）
 
 # === 内存缓存 ===
 _quotes_cache: Dict[str, dict] = {}
 _week_change_cache: Dict[str, dict] = {}  # 基金本周涨幅缓存
-_holdings_memory_cache: Dict[str, dict] = {}  # 持仓内存缓存
-_HOLDINGS_MEMORY_TTL = 300  # 持仓内存缓存 TTL（5 分钟）
-
-
-# === HTTP 请求工具函数 ===
-def _http_get(url: str, headers: dict = None, timeout: int = REQUEST_TIMEOUT) -> str:
-    """使用连接池发送 GET 请求，返回响应内容"""
-    if headers is None:
-        headers = {}
-    # 默认 User-Agent
-    if "User-Agent" not in headers:
-        headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-
-    try:
-        resp = _http_pool.request("GET", url, headers=headers, timeout=timeout)
-        # 尝试解码
-        content = resp.data
-        try:
-            return content.decode("utf-8")
-        except UnicodeDecodeError:
-            try:
-                return content.decode("gbk")
-            except UnicodeDecodeError:
-                return content.decode("utf-8", errors="replace")
-    except Exception as e:
-        raise e
-
-
-def _http_get_json(url: str, headers: dict = None, timeout: int = REQUEST_TIMEOUT) -> dict:
-    """发送 GET 请求并解析 JSON 响应"""
-    content = _http_get(url, headers, timeout)
-    return json.loads(content)
-
 
 # === ETF联接基金：动态检测 + 用户手动指定（持久化到文件） ===
 
@@ -136,7 +100,9 @@ def get_fund_name(fund_code: str) -> Optional[str]:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": f"http://fund.eastmoney.com/{fund_code}.html",
         }
-        content = _http_get(url, headers)
+        req = Request(url, headers=headers)
+        with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            content = resp.read().decode("utf-8")
 
         match = re.search(r'var\s+fS_name\s*=\s*"([^"]+)"', content)
         if match:
@@ -182,7 +148,9 @@ def _fetch_eastmoney_holdings(fund_code: str, headers: dict) -> Tuple[Optional[L
             f"https://fundf10.eastmoney.com/FundArchivesDatas.aspx?"
             f"type=jjcc&code={fund_code}&topline=1000&year=&month=&rt={int(time.time()*1000)}"
         )
-        content = _http_get(url, headers)
+        req = Request(url, headers=headers)
+        with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            content = resp.read().decode("utf-8")
 
         # === 解析报告日期 ===
         report_date = None
@@ -298,7 +266,9 @@ def _fetch_holdings_combined(fund_code: str, depth: int = 0) -> Optional[dict]:
     fund_name = None
     try:
         url1 = f"http://fund.eastmoney.com/pingzhongdata/{fund_code}.js"
-        content1 = _http_get(url1, headers)
+        req1 = Request(url1, headers=headers)
+        with urlopen(req1, timeout=REQUEST_TIMEOUT) as resp:
+            content1 = resp.read().decode("utf-8")
 
         name_match = re.search(r'var\s+fS_name\s*=\s*"([^"]+)"', content1)
         if name_match:
@@ -366,32 +336,24 @@ def _fetch_holdings_combined(fund_code: str, depth: int = 0) -> Optional[dict]:
 
 
 def get_holdings(fund_code: str, force_refresh: bool = False) -> dict:
-    """获取基金持仓快照（带内存缓存）"""
-    import time as _time
-
-    # 1. 内存缓存优先（5 分钟内直接返回）
-    if not force_refresh and fund_code in _holdings_memory_cache:
-        cached = _holdings_memory_cache[fund_code]
-        if _time.time() - cached["ts"] < _HOLDINGS_MEMORY_TTL:
-            return cached["data"]
-
+    """获取基金持仓快照"""
     _ensure_cache_dir()
     cache_path = _get_holdings_cache_path(fund_code)
 
-    # 2. 文件缓存次之
-    if not force_refresh and _is_holdings_cache_valid(cache_path):
+    # 实时估值优先使用已有缓存；过期缓存由后台刷新任务更新，不能在页面请求中
+    # 同步抓取数百只基金，否则上游限频时整批估值会卡住数分钟。
+    if not force_refresh and cache_path.exists():
         try:
             with open(cache_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                if data.get("positions"):
-                    if data.get("is_etf_link") or data.get("parsed_weight", 0) > 30:
-                        # 写入内存缓存
-                        _holdings_memory_cache[fund_code] = {"data": data, "ts": _time.time()}
-                        return data
+            if data.get("positions") or data.get("_no_holdings"):
+                if not _is_holdings_cache_valid(cache_path):
+                    data = dict(data)
+                    data["_stale"] = True
+                return data
         except:
             pass
 
-    # 3. 网络获取
     data = _fetch_holdings_combined(fund_code)
 
     if data and data.get("positions"):
@@ -400,11 +362,8 @@ def get_holdings(fund_code: str, force_refresh: bool = False) -> dict:
                 json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"[Holdings] 缓存写入失败: {e}")
-        # 写入内存缓存
-        _holdings_memory_cache[fund_code] = {"data": data, "ts": _time.time()}
         return data
 
-    # 4. 使用过期缓存兜底
     if cache_path.exists():
         try:
             with open(cache_path, "r", encoding="utf-8") as f:
@@ -427,9 +386,9 @@ def get_holdings(fund_code: str, force_refresh: bool = False) -> dict:
 # 行情 Provider
 # ============================================================
 
-def _convert_to_tencent_symbol(stock_code: str) -> str:
+def _convert_to_sina_symbol(stock_code: str) -> str:
     if len(stock_code) == 5:
-        # 港股代码（5位），腾讯格式为 hk + 5位代码
+        # 港股代码（5位），新浪格式为 hk + 5位代码
         return f"hk{stock_code}"
     if stock_code.startswith(("6", "5", "9")):
         return f"sh{stock_code}"
@@ -437,10 +396,6 @@ def _convert_to_tencent_symbol(stock_code: str) -> str:
 
 
 def _fetch_quotes_batch_sina(tickers: List[str]) -> Dict[str, dict]:
-    """通过腾讯行情接口 qt.gtimg.cn 批量获取实时涨跌幅
-    新浪 hq.sinajs.cn 对云服务器 IP 返回 403，腾讯接口无此限制
-    腾讯响应格式: v_sh600000="1~名称~代码~现价~昨收~..."  字段用 ~ 分隔
-    """
     if not tickers:
         return {}
 
@@ -449,40 +404,52 @@ def _fetch_quotes_batch_sina(tickers: List[str]) -> Dict[str, dict]:
 
     for i in range(0, len(tickers), batch_size):
         batch = tickers[i:i+batch_size]
-        symbols = [_convert_to_tencent_symbol(t) for t in batch]
-        url = f"http://qt.gtimg.cn/q={','.join(symbols)}"
+        symbols = [_convert_to_sina_symbol(t) for t in batch]
+        url = f"https://hq.sinajs.cn/list={','.join(symbols)}"
         headers = {
-            "User-Agent": "Mozilla/5.0"
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://finance.sina.com.cn"
         }
 
         try:
-            content = _http_get(url, headers)
+            req = Request(url, headers=headers)
+            with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+                raw = resp.read()
+                try:
+                    content = raw.decode("gbk")
+                except (UnicodeDecodeError, LookupError):
+                    content = raw.decode("utf-8", errors="replace")
 
             now = datetime.now()
-            for line in content.strip().split(";"):
-                line = line.strip()
-                if not line:
-                    continue
-                # A股: v_sh600000="1~浦发银行~600000~13.68~13.45~..."
-                # 港股: v_hk09896="1~阿里巴巴~09896~83.20~..."
-                match = re.match(r'v_((?:s[hz]\d{6})|(?:hk\d{5}))="([^"]*)"', line)
+            for line in content.strip().split("\n"):
+                # A股: var hq_str_sh600000="..." 或 var hq_str_sz000001="..."
+                # 港股: var hq_str_hk09896="..."
+                match = re.match(r'var hq_str_((?:s[hz]\d{6})|(?:hk\d{5}))="([^"]*)"', line)
                 if not match:
                     continue
                 symbol, data_str = match.groups()
                 if not data_str:
                     continue
-                data = data_str.split("~")
+                data = data_str.split(",")
 
                 is_hk = symbol.startswith("hk")
                 stock_code = symbol[2:]
 
                 try:
-                    # 腾讯格式统一: [1]=名称, [3]=现价, [4]=昨收
-                    if len(data) < 5:
-                        continue
-                    name = data[1]
-                    current = float(data[3]) if data[3] else 0
-                    yesterday = float(data[4]) if data[4] else 0
+                    if is_hk:
+                        # 港股新浪格式: 名称,开盘价,昨收,最高,最低,现价,...
+                        if len(data) < 6:
+                            continue
+                        current = float(data[6]) if data[6] else 0
+                        yesterday = float(data[3]) if data[3] else 0
+                        name = data[1]
+                    else:
+                        # A股格式: 名称,今开,昨收,现价,...
+                        if len(data) < 4:
+                            continue
+                        current = float(data[3]) if data[3] else 0
+                        yesterday = float(data[2]) if data[2] else 0
+                        name = data[0]
 
                     pct = round((current - yesterday) / yesterday * 100, 2) if yesterday > 0 and current > 0 else 0.0
                     all_results[stock_code] = {
@@ -562,43 +529,39 @@ if __name__ == "__main__":
 # ============================================================
 
 def _fetch_fund_performance_batch(fund_codes: List[str]) -> Dict[str, Optional[float]]:
-    """使用东方财富基金业绩API批量获取近1周涨幅（分批请求避免URL过长）"""
+    """使用东方财富基金业绩API批量获取近1周涨幅"""
     result = {}
     if not fund_codes:
         return result
 
-    # 分批请求，每批最多 30 只基金（降低每批数量，提高成功率）
-    batch_size = 30
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Referer": "https://fund.eastmoney.com/",
-    }
+    try:
+        codes_str = ",".join(fund_codes)
+        url = (
+            f"https://push2.eastmoney.com/api/qt/clist/get?"
+            f"fid=f3&po=1&pz={len(fund_codes)}&np=1&fltt=2&invt=2"
+            f"&fields=f12,f14,f3"
+            f"&fs=b:{codes_str}"
+        )
 
-    for i in range(0, len(fund_codes), batch_size):
-        batch = fund_codes[i:i + batch_size]
-        try:
-            codes_str = ",".join(batch)
-            url = (
-                f"https://push2.eastmoney.com/api/qt/clist/get?"
-                f"fid=f3&po=1&pz={len(batch)}&np=1&fltt=2&invt=2"
-                f"&fields=f12,f14,f3"
-                f"&fs=b:{codes_str}"
-            )
+        req = Request(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Referer": "https://fund.eastmoney.com/",
+        })
+        with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            content = resp.read().decode("utf-8")
 
-            data = _http_get_json(url, headers)
-
-            if data.get("data") and data["data"].get("diff"):
-                for item in data["data"]["diff"]:
-                    code = item.get("f12", "")
-                    week_change = item.get("f3")
-                    if code and week_change is not None and week_change != "-":
-                        try:
-                            result[code] = float(week_change)
-                        except (ValueError, TypeError):
-                            pass
-        except Exception as e:
-            # 批量失败时不打印日志，静默降级到单独请求
-            pass
+        data = json.loads(content)
+        if data.get("data") and data["data"].get("diff"):
+            for item in data["data"]["diff"]:
+                code = item.get("f12", "")
+                week_change = item.get("f3")
+                if code and week_change is not None and week_change != "-":
+                    try:
+                        result[code] = float(week_change)
+                    except (ValueError, TypeError):
+                        pass
+    except Exception as e:
+        print(f"[5DayChange] 批量API失败: {e}")
 
     return result
 
@@ -610,11 +573,14 @@ def _fetch_fund_week_change_single(fund_code: str) -> Optional[float]:
             f"https://api.fund.eastmoney.com/f10/lsjz?"
             f"fundCode={fund_code}&pageIndex=1&pageSize=6"
         )
-        headers = {
+        req = Request(url, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": f"https://fundf10.eastmoney.com/jjjz_{fund_code}.html",
-        }
-        data = _http_get_json(url, headers)
+        })
+        with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            content = resp.read().decode("utf-8")
+
+        data = json.loads(content)
         items = data.get("Data", {}).get("LSJZList", [])
 
         if len(items) >= 6:
@@ -644,33 +610,10 @@ def get_fund_5day_change(fund_code: str) -> Optional[float]:
 
 
 def get_fund_5day_changes_batch(fund_codes: List[str]) -> Dict[str, Optional[float]]:
-    """批量获取基金近5日涨幅（优先使用东方财富批量API，失败时并发fallback）"""
-    if not fund_codes:
-        return {}
-
+    """批量获取基金近5日涨幅"""
     result = {}
-
-    # 1. 先尝试东方财富批量 API
-    batch_result = _fetch_fund_performance_batch(fund_codes)
-    result.update(batch_result)
-
-    # 2. 未命中的并发请求（fallback）
-    missing = [c for c in fund_codes if c not in result or result[c] is None]
-    if missing:
-        from concurrent.futures import ThreadPoolExecutor
-
-        def _fetch_one(code):
-            val = _fetch_fund_week_change_single(code)
-            if val is not None:
-                _week_change_cache[code] = {"value": val, "time": time.time()}
-            return code, val
-
-        max_workers = min(16, max(4, len(missing) // 2))
-        with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            futures = pool.map(_fetch_one, missing)
-            for code, val in futures:
-                result[code] = val
-
+    for code in fund_codes:
+        result[code] = get_fund_5day_change(code)
     return result
 
 
@@ -901,11 +844,12 @@ def get_fundgz_estimation(fund_code: str) -> Optional[dict]:
 
     try:
         url = f"http://fundgz.1234567.com.cn/js/{fund_code}.js?rt={int(time.time()*1000)}"
-        headers = {
+        req = Request(url, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": "https://fund.eastmoney.com/",
-        }
-        content = _http_get(url, headers, timeout=8)
+        })
+        with urlopen(req, timeout=8) as resp:
+            content = resp.read().decode("utf-8")
 
         match = re.search(r'jsonpgz\((.*)\)', content)
         if match:
@@ -928,6 +872,7 @@ def get_fundgz_estimation(fund_code: str) -> Optional[dict]:
 
 _nav_history_cache: Dict[str, dict] = {}  # key=fund_code, value={"data": list, "ts": float}
 _NAV_HISTORY_TTL = 3600  # 1小时缓存
+_NAV_HISTORY_ERROR_TTL = 60  # 失败结果短缓存，避免同一批请求立即重复轰炸上游
 _NAV_HISTORY_FETCH_SIZE = 30  # 固定请求30条，缓存完整数据
 
 
@@ -949,11 +894,12 @@ def get_fund_nav_history(fund_code: str, days: int = 15) -> list:
     cache_key = fund_code
     if cache_key in _nav_history_cache:
         cached = _nav_history_cache[cache_key]
-        if time.time() - cached["ts"] < _NAV_HISTORY_TTL:
-            # 缓存数据够用，直接截取
-            if len(cached["data"]) >= days:
-                return cached["data"][:days]
-            # 缓存数据不够，重新拉取
+        ttl = _NAV_HISTORY_ERROR_TTL if cached.get("error") else _NAV_HISTORY_TTL
+        if time.time() - cached["ts"] < ttl:
+            cached_data = cached.get("data", [])
+            if (cached.get("error") or len(cached_data) >= days or
+                    cached.get("fetch_size", 0) >= days):
+                return cached_data[:days]
 
     # 请求时用 max(days, _NAV_HISTORY_FETCH_SIZE) 确保拿够
     fetch_size = max(days, _NAV_HISTORY_FETCH_SIZE)
@@ -964,11 +910,14 @@ def get_fund_nav_history(fund_code: str, days: int = 15) -> list:
             f"https://api.fund.eastmoney.com/f10/lsjz?"
             f"fundCode={fund_code}&pageIndex=1&pageSize={fetch_size}"
         )
-        headers = {
+        req = Request(url, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer": f"https://fundf10.eastmoney.com/jjjz_{fund_code}.html",
-        }
-        data = _http_get_json(url, headers)
+        })
+        with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            content = resp.read().decode("utf-8")
+
+        data = json.loads(content)
         items = data.get("Data", {}).get("LSJZList", [])
 
         result = []
@@ -994,10 +943,20 @@ def get_fund_nav_history(fund_code: str, days: int = 15) -> list:
             })
 
         # 写入缓存
-        _nav_history_cache[cache_key] = {"data": result, "ts": time.time()}
+        _nav_history_cache[cache_key] = {
+            "data": result,
+            "ts": time.time(),
+            "fetch_size": fetch_size,
+        }
         # 静默成功，仅失败时输出日志
         return result[:days]
 
     except Exception as e:
         print(f"[NavHistory] {fund_code} 获取失败: {e}")
+        _nav_history_cache[cache_key] = {
+            "data": [],
+            "ts": time.time(),
+            "fetch_size": fetch_size,
+            "error": True,
+        }
         return []

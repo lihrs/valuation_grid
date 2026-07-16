@@ -7,11 +7,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from .providers import get_holdings, get_quotes, get_fund_5day_change, get_etf_realtime_change, get_fundgz_estimation
+from .providers import get_holdings, get_quotes, get_etf_realtime_change, get_fundgz_estimation
 
 # === 配置 ===
 DATA_DIR = Path(__file__).parent.parent / "data"
 STATE_FILE = DATA_DIR / "state.json"
+_VALUATION_BATCH_MAX_WORKERS = 8
+_VALUATION_BATCH_TIMEOUT_SECONDS = 45
 
 # === 置信度校准：估值偏差历史 ===
 DEVIATION_FILE = DATA_DIR / "confidence_deviations.json"
@@ -684,128 +686,73 @@ def _is_market_closed() -> bool:
         pass
     return False  # 盘中或午休，继续用估值
 
-def _batch_fetch_nav_history(fund_codes: List[str], days: int = 22) -> Dict[str, list]:
-    """批量预拉取所有基金的净值历史（并发执行）
-    返回 {fund_code: [历史净值列表]}，用于 20 日涨幅计算和 nav fallback
-    """
-    from concurrent.futures import ThreadPoolExecutor
+def calculate_valuation_batch(fund_codes: List[str]) -> List[dict]:
+    from concurrent.futures import ThreadPoolExecutor, wait
     from .providers import get_fund_nav_history
 
-    result = {}
-    # 根据基金数量动态调整线程池
-    max_workers = min(16, max(4, len(fund_codes) // 2))
+    if not fund_codes:
+        return []
 
-    def _fetch_one(code):
-        try:
-            return code, get_fund_nav_history(code, days)
-        except Exception:
-            return code, []
-
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = pool.map(_fetch_one, fund_codes)
-        for code, hist in futures:
-            result[code] = hist
-
-    return result
-
-
-def _batch_preload_holdings_and_quotes(fund_codes: List[str]) -> tuple:
-    """批量预加载所有基金的持仓和行情（性能优化核心）
-
-    返回 (holdings_map, all_quotes)：
-    - holdings_map: {fund_code: holdings_data}
-    - all_quotes: 所有持仓股票的行情缓存（已注入到 providers 的内存缓存）
-    """
-    from concurrent.futures import ThreadPoolExecutor
-    from .providers import get_holdings, get_quotes, _quotes_cache
-    import time as _time
-
-    # 1. 并发获取所有持仓
-    holdings_map = {}
-    max_workers = min(16, max(4, len(fund_codes) // 2))
-
-    def _fetch_holdings(code):
-        try:
-            return code, get_holdings(code)
-        except Exception:
-            return code, {"fund_code": code, "error": "持仓获取失败", "positions": []}
-
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = pool.map(_fetch_holdings, fund_codes)
-        for code, holdings in futures:
-            holdings_map[code] = holdings
-
-    # 2. 收集所有股票代码（去重）
-    all_tickers = set()
-    for holdings in holdings_map.values():
-        for pos in holdings.get("positions", []):
-            stock_code = pos.get("stock_code")
-            if stock_code:
-                all_tickers.add(stock_code)
-
-    # 3. 批量请求所有行情（一次网络请求）
-    if all_tickers:
-        get_quotes(list(all_tickers))
-
-    return holdings_map
-
-
-def _calc_20day_change_from_history(nav_history: list) -> Optional[float]:
-    """从预拉取的净值历史计算 20 日复利涨跌幅"""
-    if not nav_history:
-        return None
-    try:
-        changes = [h["change"] for h in nav_history if h.get("change") is not None][:20]
-        if len(changes) < 5:
+    def _calc_period_change(history: list, days: int):
+        changes = [h["change"] for h in history if h.get("change") is not None][:days]
+        if len(changes) < min(days, 5):
             return None
         product = 1.0
-        for c in changes:
-            product *= (1 + c / 100)
+        for change in changes:
+            product *= 1 + change / 100
         return round((product - 1) * 100, 2)
-    except Exception:
-        return None
 
-
-def calculate_valuation_batch(fund_codes: List[str]) -> List[dict]:
-    from concurrent.futures import ThreadPoolExecutor
-    from .providers import get_fund_5day_changes_batch, get_fund_nav_history
+    def _calculate_one(code: str) -> dict:
+        # calculate_valuation 会先加载一次历史净值；这里读取22日时直接复用
+        # provider 的30日缓存，避免原实现对同一基金并发发起三次请求。
+        result = calculate_valuation(code)
+        history = get_fund_nav_history(code, 22)
+        result["week_change"] = _calc_period_change(history, 5)
+        result["month_change"] = _calc_period_change(history, 20)
+        return result
 
     # v5.22: 在并发计算之前统一加载盘中缓存（进程重启恢复场景）
     _ensure_intraday_cache_loaded()
 
-    # === 性能优化：批量预拉取数据 ===
-    # 1. 批量获取 5 日涨幅（一次 API 请求）
-    week_data = get_fund_5day_changes_batch(fund_codes)
-
-    # 2. 批量预拉取净值历史（用于 20 日涨幅和 nav fallback）
-    nav_history_map = _batch_fetch_nav_history(fund_codes, days=22)
-
-    # 3. 从预拉取数据计算 20 日涨幅
-    month_data = {}
-    for code in fund_codes:
-        month_data[code] = _calc_20day_change_from_history(nav_history_map.get(code, []))
-
-    # 4. 批量预加载持仓和行情（核心优化：股票行情去重合并）
-    _batch_preload_holdings_and_quotes(fund_codes)
-
-    # 5. 并发计算估值（动态线程池大小）
+    # 去重后每只基金只排一个任务；返回时仍按原始顺序保留重复条目。
+    unique_codes = list(dict.fromkeys(fund_codes))
     results_map = {}
-    max_workers = min(16, max(4, len(fund_codes) // 2))
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        val_futures = {pool.submit(calculate_valuation, code): code for code in fund_codes}
+    pool = ThreadPoolExecutor(max_workers=min(_VALUATION_BATCH_MAX_WORKERS, len(unique_codes)))
+    future_to_code = {}
+    pending = set()
+    try:
+        future_to_code = {pool.submit(_calculate_one, code): code for code in unique_codes}
+        done, pending = wait(
+            future_to_code,
+            timeout=_VALUATION_BATCH_TIMEOUT_SECONDS,
+        )
 
-        for future in val_futures:
-            code = val_futures[future]
+        for future in done:
+            code = future_to_code[future]
             try:
-                results_map[code] = future.result(timeout=30)
-            except:
-                results_map[code] = {"fund_code": code, "error": "估值计算超时"}
+                results_map[code] = future.result()
+            except Exception as exc:
+                results_map[code] = {
+                    "fund_code": code,
+                    "error": f"估值计算失败: {exc}",
+                    "week_change": None,
+                    "month_change": None,
+                }
 
-    # 6. 按原始顺序组装结果并合并
-    results = [results_map.get(code, {"fund_code": code}) for code in fund_codes]
-    for r in results:
-        r["week_change"] = week_data.get(r["fund_code"])
-        r["month_change"] = month_data.get(r["fund_code"])
+        for future in pending:
+            code = future_to_code[future]
+            future.cancel()
+            results_map[code] = {
+                "fund_code": code,
+                "error": f"整批估值超过{_VALUATION_BATCH_TIMEOUT_SECONDS}秒，已跳过",
+                "week_change": None,
+                "month_change": None,
+            }
+    finally:
+        # 不等待尚未开始的排队任务；最多仅有工作线程中正在执行的请求继续收尾。
+        pool.shutdown(wait=False, cancel_futures=True)
+
+    results = [dict(results_map.get(code, {"fund_code": code})) for code in fund_codes]
 
     # v5.22: 所有并发估值计算完成后，一次性将缓冲区偏差写入文件
     # 避免并发逐只写文件导致 load 到不完整数据覆盖历史
@@ -815,10 +762,12 @@ def calculate_valuation_batch(fund_codes: List[str]) -> List[dict]:
     if _intraday_estimation_cache:
         try:
             _ensure_data_dir()
-            tmp = _INTRADAY_CACHE_FILE.with_suffix(".tmp")
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(_intraday_estimation_cache, f, ensure_ascii=False, indent=2)
-            tmp.replace(_INTRADAY_CACHE_FILE)
+            with _intraday_cache_lock:
+                cache_snapshot = dict(_intraday_estimation_cache)
+                tmp = _INTRADAY_CACHE_FILE.with_suffix(".tmp")
+                with open(tmp, "w", encoding="utf-8") as f:
+                    json.dump(cache_snapshot, f, ensure_ascii=False, indent=2)
+                tmp.replace(_INTRADAY_CACHE_FILE)
         except Exception:
             pass
 

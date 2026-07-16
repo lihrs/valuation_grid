@@ -1,0 +1,62 @@
+{
+  "fund_code": "026539",
+  "fund_name": "融通科技臻选混合发起式C",
+  "holdings_asof_date": "2026-06-30",
+  "stock_total_weight": 94.75,
+  "parsed_weight": 52.34,
+  "missing_weight": 42.41,
+  "positions": [
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 9.69
+    },
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 7.98
+    },
+    {
+      "stock_code": "002916",
+      "stock_name": "深南电路",
+      "weight": 5.82
+    },
+    {
+      "stock_code": "300776",
+      "stock_name": "帝尔激光",
+      "weight": 5.01
+    },
+    {
+      "stock_code": "01888",
+      "stock_name": "建滔积层板",
+      "weight": 4.48
+    },
+    {
+      "stock_code": "688256",
+      "stock_name": "寒武纪",
+      "weight": 4.06
+    },
+    {
+      "stock_code": "00148",
+      "stock_name": "建滔集团",
+      "weight": 3.91
+    },
+    {
+      "stock_code": "300666",
+      "stock_name": "江丰电子",
+      "weight": 3.91
+    },
+    {
+      "stock_code": "06869",
+      "stock_name": "长飞光纤光缆",
+      "weight": 3.76
+    },
+    {
+      "stock_code": "002222",
+      "stock_name": "福晶科技",
+      "weight": 3.72
+    }
+  ],
+  "fetched_at": "2026-07-13 11:13:15",
+  "data_source": "eastmoney"
+}

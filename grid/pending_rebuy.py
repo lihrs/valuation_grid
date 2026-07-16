@@ -18,7 +18,7 @@ import threading
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-from positions import load_positions, save_positions, parse_fund_key
+from positions import load_positions, save_positions, parse_fund_key, position_write
 
 # ============================================================
 # 常量
@@ -32,7 +32,7 @@ PENDING_REBUY_WINDOW_DAYS = 28
 # 回测无此限制；实际策略中由于 cooldown 机制，正常情况下也不会堆积过多
 PENDING_REBUY_MAX_CONCURRENT = 3
 
-_pending_lock = threading.Lock()
+_pending_lock = threading.RLock()
 
 
 # ============================================================
@@ -62,6 +62,7 @@ def _is_active(pr: dict, today_str: str) -> bool:
 # 核心 API（供 engine.py 调用）
 # ============================================================
 
+@position_write
 def add_pending_rebuy(fund_code: str, trigger_nav: float, amount: float,
                       ratio: float, trend_at_creation: str,
                       source_signal: str, sell_nav: float) -> Optional[str]:
@@ -123,6 +124,7 @@ def add_pending_rebuy(fund_code: str, trigger_nav: float, amount: float,
         return pr_id
 
 
+@position_write
 def check_pending_rebuy_trigger(fund_code: str, current_nav: float) -> Optional[dict]:
     """
     检查 fund_code 是否有挂单触发。返回触发的挂单字典（取最早创建的活跃挂单中第一个触发的）；
@@ -175,6 +177,7 @@ def check_pending_rebuy_trigger(fund_code: str, current_nav: float) -> Optional[
         return dict(triggered) if triggered else None
 
 
+@position_write
 def consume_pending_rebuy(fund_code: str, pending_id: str, batch_id: str) -> bool:
     """
     将挂单标记为 triggered（已被一次买入消费）。
@@ -198,6 +201,7 @@ def consume_pending_rebuy(fund_code: str, pending_id: str, batch_id: str) -> boo
         return False
 
 
+@position_write
 def cleanup_expired_pending_rebuys(fund_code: str = None) -> int:
     """
     清理已过期但仍标记为 pending 的挂单（兜底，正常情况下 check 时会自动标记）。

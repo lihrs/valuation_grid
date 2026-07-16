@@ -1,0 +1,62 @@
+{
+  "fund_code": "022368",
+  "fund_name": "永赢睿恒混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 86.17,
+  "parsed_weight": 50.12,
+  "missing_weight": 36.05,
+  "positions": [
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 7.23
+    },
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 5.74
+    },
+    {
+      "stock_code": "002028",
+      "stock_name": "思源电气",
+      "weight": 5.64
+    },
+    {
+      "stock_code": "603308",
+      "stock_name": "应流股份",
+      "weight": 5.48
+    },
+    {
+      "stock_code": "603929",
+      "stock_name": "亚翔集成",
+      "weight": 5.12
+    },
+    {
+      "stock_code": "603986",
+      "stock_name": "兆易创新",
+      "weight": 4.67
+    },
+    {
+      "stock_code": "688331",
+      "stock_name": "荣昌生物",
+      "weight": 4.17
+    },
+    {
+      "stock_code": "300475",
+      "stock_name": "香农芯创",
+      "weight": 4.17
+    },
+    {
+      "stock_code": "603163",
+      "stock_name": "圣晖集成",
+      "weight": 4.17
+    },
+    {
+      "stock_code": "603530",
+      "stock_name": "神马电力",
+      "weight": 3.73
+    }
+  ],
+  "fetched_at": "2026-06-10 21:53:19",
+  "data_source": "eastmoney"
+}

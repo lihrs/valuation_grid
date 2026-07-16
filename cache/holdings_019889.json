@@ -1,0 +1,62 @@
+{
+  "fund_code": "019889",
+  "fund_name": "中欧周期优选混合发起C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 88.31,
+  "parsed_weight": 68.36,
+  "missing_weight": 19.95,
+  "positions": [
+    {
+      "stock_code": "002532",
+      "stock_name": "天山铝业",
+      "weight": 9.59
+    },
+    {
+      "stock_code": "603799",
+      "stock_name": "华友钴业",
+      "weight": 8.79
+    },
+    {
+      "stock_code": "000933",
+      "stock_name": "神火股份",
+      "weight": 8.09
+    },
+    {
+      "stock_code": "000792",
+      "stock_name": "盐湖股份",
+      "weight": 7.71
+    },
+    {
+      "stock_code": "000408",
+      "stock_name": "藏格矿业",
+      "weight": 7.36
+    },
+    {
+      "stock_code": "601899",
+      "stock_name": "紫金矿业",
+      "weight": 6.43
+    },
+    {
+      "stock_code": "000807",
+      "stock_name": "云铝股份",
+      "weight": 5.63
+    },
+    {
+      "stock_code": "600075",
+      "stock_name": "新疆天业",
+      "weight": 5.42
+    },
+    {
+      "stock_code": "603979",
+      "stock_name": "金诚信",
+      "weight": 5.16
+    },
+    {
+      "stock_code": "601677",
+      "stock_name": "明泰铝业",
+      "weight": 4.18
+    }
+  ],
+  "fetched_at": "2026-06-10 21:53:18",
+  "data_source": "eastmoney"
+}

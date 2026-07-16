@@ -1,0 +1,62 @@
+{
+  "fund_code": "007356",
+  "fund_name": "汇添富科技创新混合C",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 84.49,
+  "parsed_weight": 35.43,
+  "missing_weight": 49.06,
+  "positions": [
+    {
+      "stock_code": "688777",
+      "stock_name": "中控技术",
+      "weight": 6.03
+    },
+    {
+      "stock_code": "002008",
+      "stock_name": "大族激光",
+      "weight": 4.89
+    },
+    {
+      "stock_code": "300502",
+      "stock_name": "新易盛",
+      "weight": 4.6
+    },
+    {
+      "stock_code": "300054",
+      "stock_name": "鼎龙股份",
+      "weight": 3.78
+    },
+    {
+      "stock_code": "300308",
+      "stock_name": "中际旭创",
+      "weight": 3.63
+    },
+    {
+      "stock_code": "688498",
+      "stock_name": "源杰科技",
+      "weight": 3.44
+    },
+    {
+      "stock_code": "002371",
+      "stock_name": "北方华创",
+      "weight": 2.45
+    },
+    {
+      "stock_code": "002518",
+      "stock_name": "科士达",
+      "weight": 2.36
+    },
+    {
+      "stock_code": "688012",
+      "stock_name": "中微公司",
+      "weight": 2.13
+    },
+    {
+      "stock_code": "00700",
+      "stock_name": "腾讯控股",
+      "weight": 2.12
+    }
+  ],
+  "fetched_at": "2026-06-10 21:53:17",
+  "data_source": "eastmoney"
+}

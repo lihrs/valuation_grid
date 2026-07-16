@@ -1,0 +1,117 @@
+{
+  "fund_code": "161725",
+  "fund_name": "招商中证白酒指数(LOF)A",
+  "holdings_asof_date": "2026-03-31",
+  "stock_total_weight": 94.62,
+  "parsed_weight": 94.61,
+  "missing_weight": 0.01,
+  "positions": [
+    {
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "weight": 18.33
+    },
+    {
+      "stock_code": "000858",
+      "stock_name": "五粮液",
+      "weight": 16.14
+    },
+    {
+      "stock_code": "000568",
+      "stock_name": "泸州老窖",
+      "weight": 14.7
+    },
+    {
+      "stock_code": "600809",
+      "stock_name": "山西汾酒",
+      "weight": 14.32
+    },
+    {
+      "stock_code": "002304",
+      "stock_name": "洋河股份",
+      "weight": 7.74
+    },
+    {
+      "stock_code": "000596",
+      "stock_name": "古井贡酒",
+      "weight": 4.51
+    },
+    {
+      "stock_code": "603369",
+      "stock_name": "今世缘",
+      "weight": 4.07
+    },
+    {
+      "stock_code": "603198",
+      "stock_name": "迎驾贡酒",
+      "weight": 2.28
+    },
+    {
+      "stock_code": "600702",
+      "stock_name": "舍得酒业",
+      "weight": 1.85
+    },
+    {
+      "stock_code": "603589",
+      "stock_name": "口子窖",
+      "weight": 1.82
+    },
+    {
+      "stock_code": "000799",
+      "stock_name": "酒鬼酒",
+      "weight": 1.7
+    },
+    {
+      "stock_code": "600779",
+      "stock_name": "水井坊",
+      "weight": 1.58
+    },
+    {
+      "stock_code": "600559",
+      "stock_name": "老白干酒",
+      "weight": 1.52
+    },
+    {
+      "stock_code": "000860",
+      "stock_name": "顺鑫农业",
+      "weight": 1.17
+    },
+    {
+      "stock_code": "603919",
+      "stock_name": "金徽酒",
+      "weight": 1.1
+    },
+    {
+      "stock_code": "600197",
+      "stock_name": "伊力特",
+      "weight": 0.7
+    },
+    {
+      "stock_code": "600199",
+      "stock_name": "金种子酒",
+      "weight": 0.67
+    },
+    {
+      "stock_code": "000995",
+      "stock_name": "皇台酒业",
+      "weight": 0.21
+    },
+    {
+      "stock_code": "002646",
+      "stock_name": "天佑德酒",
+      "weight": 0.14
+    },
+    {
+      "stock_code": "688981",
+      "stock_name": "中芯国际",
+      "weight": 0.05
+    },
+    {
+      "stock_code": "601658",
+      "stock_name": "邮储银行",
+      "weight": 0.01
+    }
+  ],
+  "fetched_at": "2026-06-13 11:17:35",
+  "data_source": "eastmoney"
+}

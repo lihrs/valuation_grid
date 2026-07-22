@@ -53,7 +53,6 @@ function Stop-ValuationGridProcesses {
     $tunnelRoots = @($all | Where-Object {
         $_.CommandLine -and
         $_.CommandLine -match '(?i)localtunnel' -and
-        $_.CommandLine -match "--port\s+$Port(?:\s|$)" -and
         $_.CommandLine -match "--subdomain\s+$([regex]::Escape($Subdomain))(?:\s|$)"
     } | Select-Object -ExpandProperty ProcessId)
 
@@ -139,7 +138,6 @@ function Stop-CurrentTunnel {
     $ids = @($all | Where-Object {
         $_.CommandLine -and
         $_.CommandLine -match '(?i)localtunnel' -and
-        $_.CommandLine -match "--port\s+$Port(?:\s|$)" -and
         $_.CommandLine -match "--subdomain\s+$([regex]::Escape($Subdomain))(?:\s|$)"
     } | Select-Object -ExpandProperty ProcessId)
     Stop-ProcessSet $ids
@@ -185,13 +183,19 @@ function Start-VerifiedTunnel($NpxPath) {
     throw "localtunnel 两次启动均未通过公网健康检查。`n$tail"
 }
 
-$fundCount = Assert-PositionsHealthy
-Stop-ValuationGridProcesses
-
 $python = (Get-Command python.exe -ErrorAction Stop).Source
 $npx = (Get-Command npx.cmd -ErrorAction Stop).Source
 $env:PYTHONPATH = $ProjectRoot
 $env:APP_PORT = $Port
+
+# 先由 positions.py 校验并按版本从工作区外镜像恢复，再执行脚本层完整性检查。
+& $python -B -c "from positions import load_positions; load_positions()"
+if ($LASTEXITCODE -ne 0) {
+    throw "主持仓与工作区外镜像均无法安全读取，拒绝启动。"
+}
+
+$fundCount = Assert-PositionsHealthy
+Stop-ValuationGridProcesses
 
 $appProcess = Start-Process -FilePath $python `
     -ArgumentList @('-u', ('"{0}"' -f $AppPath)) `

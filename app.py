@@ -25,7 +25,8 @@ from valuation.providers import (
 )
 from positions import (
     add_batch, sell_batch, delete_batch, update_fund_config,
-    get_fund_position, get_all_positions, remove_fund, restore_archived_fund, update_sell_nav,
+    get_fund_position, get_all_positions, get_position_storage_status,
+    remove_fund, restore_archived_fund, update_sell_nav,
     delete_sell_record, update_fee_schedule, sell_fifo,
     get_groups, add_group, update_group, delete_group,
     make_fund_key, parse_fund_key, rename_fund_key,
@@ -257,7 +258,11 @@ def export_images(mode: str = "valuation"):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    storage = get_position_storage_status()
+    return {
+        "status": "ok" if storage["synchronized"] else "degraded",
+        "position_storage": storage,
+    }
 
 
 # ============================================================
@@ -266,6 +271,7 @@ def health():
 
 class BuyRequest(BaseModel):
     amount: float
+    request_id: Optional[str] = None
     nav: Optional[float] = None   # 确认净值（选填，T+1确认后补录）
     note: Optional[str] = ""
     buy_date: Optional[str] = None  # 格式 YYYY-MM-DD，默认今天
@@ -278,6 +284,7 @@ class BuyRequest(BaseModel):
 class SellRequest(BaseModel):
     batch_id: str
     sell_shares: float              # 卖出份额（必填）
+    request_id: Optional[str] = None
     sell_nav: Optional[float] = None  # 确认净值（选填，待确认时不填）
     sell_date: Optional[str] = None   # 卖出日期 YYYY-MM-DD
 
@@ -316,7 +323,8 @@ def buy_fund(fund_code: str, req: BuyRequest):
     batch = add_batch(fund_key, req.amount, req.nav, req.note or "",
                       req.buy_date, req.is_supplement,
                       is_rebuy=bool(req.is_rebuy),
-                      pending_rebuy_id=req.pending_rebuy_id)
+                      pending_rebuy_id=req.pending_rebuy_id,
+                      request_id=req.request_id)
     return {"success": True, "batch": batch, "fund_key": fund_key}
 
 
@@ -341,7 +349,7 @@ def sell_fund(fund_code: str, req: SellRequest):
         raise HTTPException(status_code=400, detail="卖出份额必须大于0")
     try:
         result = sell_batch(fund_code, req.batch_id, req.sell_shares,
-                            req.sell_nav, req.sell_date)
+                            req.sell_nav, req.sell_date, req.request_id)
         return {"success": True, **result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -417,6 +425,7 @@ class UpdateSellNavRequest(BaseModel):
 
 class SellFifoRequest(BaseModel):
     total_sell_shares: float
+    request_id: Optional[str] = None
     sell_nav: Optional[float] = None
     sell_date: Optional[str] = None
 
@@ -428,7 +437,7 @@ def sell_fund_fifo(fund_code: str, req: SellFifoRequest):
         raise HTTPException(status_code=400, detail="卖出份额必须大于0")
     try:
         result = sell_fifo(fund_code, req.total_sell_shares,
-                           req.sell_nav, req.sell_date)
+                           req.sell_nav, req.sell_date, req.request_id)
         return {"success": True, **result}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

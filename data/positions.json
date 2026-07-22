@@ -707,7 +707,7 @@
       "supplement_count": 0,
       "cooldown_until": "2026-06-13",
       "vol_sensitivity_auto": 0.96,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:38",
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:54",
       "sell_records": [
         {
           "id": "s20260506a",
@@ -934,7 +934,7 @@
       "supplement_count": 0,
       "cooldown_until": "2026-07-19",
       "vol_sensitivity_auto": 0.8,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:38",
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:55",
       "sell_records": [
         {
           "id": "s20260715a",
@@ -1272,7 +1272,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 1.3,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:37"
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:50"
     },
     "006503__驴": {
       "fund_name": "",
@@ -1386,7 +1386,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 1.05,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:37"
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:51"
     },
     "011370__柯": {
       "fund_name": "",
@@ -1473,7 +1473,7 @@
       "supplement_count": 0,
       "cooldown_until": "2026-07-18",
       "vol_sensitivity_auto": 1.26,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:37",
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:53",
       "sell_records": [
         {
           "id": "s20260714a",
@@ -1584,7 +1584,7 @@
       "supplement_count": 0,
       "cooldown_until": "2026-07-19",
       "vol_sensitivity_auto": 1.06,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:38",
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:54",
       "sell_records": [
         {
           "id": "s20260715a",
@@ -1685,7 +1685,7 @@
       "supplement_count": 0,
       "cooldown_until": null,
       "vol_sensitivity_auto": 0.96,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:38"
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:54"
     },
     "008989__柯": {
       "fund_name": "",
@@ -1778,7 +1778,7 @@
       ],
       "supplement_count": 0,
       "vol_sensitivity_auto": 0.86,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:37",
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:51",
       "sell_records": [
         {
           "id": "s20260714a",
@@ -1924,7 +1924,7 @@
       "supplement_count": 0,
       "cooldown_until": "2026-07-18",
       "vol_sensitivity_auto": 1.2,
-      "vol_sensitivity_auto_at": "2026-07-21 22:12:38",
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:53",
       "sell_records": [
         {
           "id": "s20260714a",
@@ -2054,7 +2054,7 @@
       "supplement_count": 0,
       "cooldown_until": "2026-07-24",
       "vol_sensitivity_auto": 1.13,
-      "vol_sensitivity_auto_at": "2026-07-21 22:24:39",
+      "vol_sensitivity_auto_at": "2026-07-22 10:47:51",
       "sell_records": [
         {
           "id": "s20260428a",
@@ -2198,7 +2198,7 @@
     }
   },
   "cash_reserve_ratio": 0.3,
-  "updated_at": "2026-07-21 22:29:20",
+  "updated_at": "2026-07-22 10:47:55",
   "market_regime": "neutral",
   "regime_auto": true,
   "regime_auto_result": "neutral",

@@ -17,6 +17,14 @@ POS_BACKUP_FILE = DATA_DIR / "positions.backup.json"
 POS_HISTORY_DIR = DATA_DIR / "positions_history"
 POS_LOCK_FILE = DATA_DIR / ".positions.lock"
 POS_HISTORY_LIMIT = 500
+
+_default_store_root = Path(
+    os.environ.get("LOCALAPPDATA", str(Path.home()))
+) / "valuation_grid" / "position_store"
+POS_MIRROR_FILE = Path(
+    os.environ.get("VALUATION_GRID_POSITIONS_MIRROR", str(_default_store_root / "positions.json"))
+)
+POS_MIRROR_HISTORY_DIR = POS_MIRROR_FILE.parent / "history"
 _MISSING_REVISION = "<missing>"
 _pos_lock = threading.RLock()
 _pos_lock_state = threading.local()
@@ -207,24 +215,81 @@ def _validate_positions(data: dict, source: str):
         raise PositionDataError(f"{source} 缺少有效的 funds 对象")
 
 
-def _read_positions_unlocked() -> _PositionData:
-    if not POS_FILE.exists():
-        return _PositionData(_empty_positions(), _MISSING_REVISION)
-
+def _read_position_file(path: Path, source: str):
+    if not path.exists():
+        return None, None, None
     last_error = None
     for attempt in range(3):
         try:
-            raw = POS_FILE.read_bytes()
+            raw = path.read_bytes()
             data = json.loads(raw.decode("utf-8-sig"))
-            _validate_positions(data, "positions.json")
+            _validate_positions(data, source)
             revision = hashlib.sha256(raw).hexdigest()
-            return _PositionData(data, revision)
+            return _PositionData(data, revision), raw, None
         except (OSError, UnicodeError, json.JSONDecodeError, PositionDataError) as exc:
             last_error = exc
             if attempt < 2:
                 time.sleep(0.05)
 
-    raise PositionDataError(f"读取 positions.json 失败，已拒绝返回空持仓: {last_error}") from last_error
+    return None, None, last_error
+
+
+def _storage_revision(data: dict) -> int:
+    try:
+        return max(0, int(data.get("storage_revision", 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _read_positions_unlocked() -> _PositionData:
+    primary, primary_raw, primary_error = _read_position_file(POS_FILE, "positions.json")
+    mirror, mirror_raw, mirror_error = _read_position_file(POS_MIRROR_FILE, "持仓镜像")
+
+    if primary is None and mirror is None:
+        if primary_error is None and mirror_error is None:
+            return _PositionData(_empty_positions(), _MISSING_REVISION)
+        raise PositionDataError(
+            f"主持仓与镜像均不可用，已拒绝返回空持仓: "
+            f"primary={primary_error}; mirror={mirror_error}"
+        )
+
+    if primary is None:
+        _atomic_write_bytes(POS_FILE, mirror_raw)
+        print(f"[Position] 主持仓不可用，已从工作区外镜像恢复: {POS_MIRROR_FILE}")
+        return _PositionData(dict(mirror), hashlib.sha256(mirror_raw).hexdigest())
+
+    if mirror is None:
+        _atomic_write_bytes(POS_MIRROR_FILE, primary_raw)
+        print(f"[Position] 已创建工作区外持仓镜像: {POS_MIRROR_FILE}")
+        return primary
+
+    primary_version = _storage_revision(primary)
+    mirror_version = _storage_revision(mirror)
+    if mirror_version > primary_version:
+        _atomic_write_bytes(POS_FILE, mirror_raw)
+        print(
+            f"[Position] 检测到主文件回退 v{primary_version} < 镜像 v{mirror_version}，已自动恢复"
+        )
+        return _PositionData(dict(mirror), hashlib.sha256(mirror_raw).hexdigest())
+
+    if primary_version > mirror_version:
+        _atomic_write_bytes(POS_MIRROR_FILE, primary_raw)
+        print(
+            f"[Position] 主文件版本较新 v{primary_version} > 镜像 v{mirror_version}，已同步镜像"
+        )
+        return primary
+
+    if primary_raw != mirror_raw:
+        primary_updated = str(primary.get("updated_at", ""))
+        mirror_updated = str(mirror.get("updated_at", ""))
+        if mirror_updated > primary_updated:
+            _atomic_write_bytes(POS_FILE, mirror_raw)
+            print("[Position] 同版本镜像时间较新，已自动恢复主文件")
+            return _PositionData(dict(mirror), hashlib.sha256(mirror_raw).hexdigest())
+        _atomic_write_bytes(POS_MIRROR_FILE, primary_raw)
+        print("[Position] 同版本主文件时间较新，已同步工作区外镜像")
+
+    return primary
 
 
 def load_positions() -> dict:
@@ -260,14 +325,15 @@ def _atomic_write_bytes(target: Path, raw: bytes):
             pass
 
 
-def _save_position_history(raw: bytes):
+def _save_position_history(raw: bytes, history_dir: Path = None):
     """Save a durable pre-write snapshot and keep a bounded local history."""
+    history_dir = history_dir or POS_HISTORY_DIR
     digest = hashlib.sha256(raw).hexdigest()[:12]
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-    snapshot = POS_HISTORY_DIR / f"positions-{timestamp}-{digest}.json"
+    snapshot = history_dir / f"positions-{timestamp}-{digest}.json"
     _atomic_write_bytes(snapshot, raw)
 
-    snapshots = sorted(POS_HISTORY_DIR.glob("positions-*.json"))
+    snapshots = sorted(history_dir.glob("positions-*.json"))
     for old_snapshot in snapshots[:-POS_HISTORY_LIMIT]:
         try:
             old_snapshot.unlink()
@@ -291,6 +357,7 @@ def save_positions(data: dict, *, allow_empty: bool = False) -> bool:
                 f"拒绝将 {current_count} 个持仓意外覆盖为空；如需清空必须显式确认"
             )
 
+        data["storage_revision"] = _storage_revision(current) + 1
         data["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         raw = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         # 写入前再次自检，避免任何不可解析内容落盘。
@@ -300,6 +367,12 @@ def save_positions(data: dict, *, allow_empty: bool = False) -> bool:
             current_raw = POS_FILE.read_bytes()
             _save_position_history(current_raw)
             _atomic_write_bytes(POS_BACKUP_FILE, current_raw)
+        if POS_MIRROR_FILE.exists():
+            mirror_raw = POS_MIRROR_FILE.read_bytes()
+            _save_position_history(mirror_raw, POS_MIRROR_HISTORY_DIR)
+
+        # 镜像位于 Git 工作区外，先落镜像再落主文件；任一步异常都不会破坏旧文件。
+        _atomic_write_bytes(POS_MIRROR_FILE, raw)
         _atomic_write_bytes(POS_FILE, raw)
 
         if isinstance(data, _PositionData):
@@ -324,10 +397,40 @@ def _next_batch_id(batches: list, date_str: str) -> str:
     return f"b{date_part}{letter}"
 
 
+def _get_operation_receipt(data: dict, request_id: str, operation: str, fund_code: str):
+    if not request_id:
+        return None
+    receipt = data.get("operation_receipts", {}).get(request_id)
+    if (
+        isinstance(receipt, dict)
+        and receipt.get("operation") == operation
+        and receipt.get("fund_code") == fund_code
+    ):
+        return receipt.get("result")
+    return None
+
+
+def _store_operation_receipt(
+    data: dict, request_id: str, operation: str, fund_code: str, result: dict
+):
+    if not request_id:
+        return
+    receipts = data.setdefault("operation_receipts", {})
+    receipts[request_id] = {
+        "operation": operation,
+        "fund_code": fund_code,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "result": result,
+    }
+    while len(receipts) > 1000:
+        receipts.pop(next(iter(receipts)))
+
+
 @position_write
 def add_batch(fund_code: str, amount: float, nav: float = None, note: str = "",
               buy_date: str = None, is_supplement: bool = False,
-              is_rebuy: bool = False, pending_rebuy_id: str = None) -> dict:
+              is_rebuy: bool = False, pending_rebuy_id: str = None,
+              request_id: str = None) -> dict:
     """
     新增一笔买入批次。
     - buy_date 格式 YYYY-MM-DD，默认今天
@@ -339,6 +442,9 @@ def add_batch(fund_code: str, amount: float, nav: float = None, note: str = "",
     - 返回新增的 batch dict
     """
     data = load_positions()
+    prior_result = _get_operation_receipt(data, request_id, "buy", fund_code)
+    if prior_result is not None:
+        return prior_result
     funds = data.setdefault("funds", {})
 
     if fund_code not in funds:
@@ -385,6 +491,7 @@ def add_batch(fund_code: str, amount: float, nav: float = None, note: str = "",
         fund["supplement_count"] = fund.get("supplement_count", 0) + 1
         print(f"[Position] 补仓计数 {fund_code}: {fund['supplement_count']}")
 
+    _store_operation_receipt(data, request_id, "buy", fund_code, batch)
     save_positions(data)
 
     # v5.X: 如果是延迟回补触发的买入，标记对应挂单为 triggered
@@ -530,7 +637,8 @@ def _is_valid_date(s: str) -> bool:
 
 @position_write
 def sell_batch(fund_code: str, batch_id: str, sell_shares: float,
-               sell_nav: float = None, sell_date: str = None) -> dict:
+               sell_nav: float = None, sell_date: str = None,
+               request_id: str = None) -> dict:
     """
     卖出某批次（按份额）。
     - sell_shares: 卖出份额（必填，和支付宝一致）
@@ -545,6 +653,9 @@ def sell_batch(fund_code: str, batch_id: str, sell_shares: float,
     fund = data.get("funds", {}).get(fund_code)
     if not fund:
         raise ValueError(f"基金 {fund_code} 不存在")
+    prior_result = _get_operation_receipt(data, request_id, "sell", fund_code)
+    if prior_result is not None:
+        return prior_result
 
     batch = None
     for b in fund["batches"]:
@@ -641,10 +752,7 @@ def sell_batch(fund_code: str, batch_id: str, sell_shares: float,
         fund["supplement_count"] = 0
         print(f"[Position] {fund_code} 全部清仓，重置补仓计数")
 
-    save_positions(data)
-    print(f"[Position] 卖出 {fund_code} {batch_id}: {sell_shares}份 @ {sell_nav or '待确认'}")
-
-    return {
+    result = {
         "hold_days": hold_days,
         "sell_fee_rate": sell_fee_rate,
         "sell_shares": round(sell_shares, 2),
@@ -655,6 +763,10 @@ def sell_batch(fund_code: str, batch_id: str, sell_shares: float,
         "nav_pending": sell_nav is None or sell_nav <= 0,
         "sell_record_id": sell_record_id,
     }
+    _store_operation_receipt(data, request_id, "sell", fund_code, result)
+    save_positions(data)
+    print(f"[Position] 卖出 {fund_code} {batch_id}: {sell_shares}份 @ {sell_nav or '待确认'}")
+    return result
 
 
 # 冷却自然日（简化：用自然日近似交易日）
@@ -887,7 +999,8 @@ def update_fund_config(fund_code: str, max_position: int = None, fund_name: str 
 
 @position_write
 def sell_fifo(fund_code: str, total_sell_shares: float,
-              sell_nav: float = None, sell_date: str = None) -> dict:
+              sell_nav: float = None, sell_date: str = None,
+              request_id: str = None) -> dict:
     """
     按 FIFO（先进先出）顺序卖出指定总份额。
     模拟支付宝实际行为：用户只输入总份额，系统从最早批次开始依次扣减。
@@ -901,6 +1014,9 @@ def sell_fifo(fund_code: str, total_sell_shares: float,
     fund = data.get("funds", {}).get(fund_code)
     if not fund:
         raise ValueError(f"基金 {fund_code} 不存在")
+    prior_result = _get_operation_receipt(data, request_id, "sell_fifo", fund_code)
+    if prior_result is not None:
+        return prior_result
 
     holding = [b for b in fund.get("batches", []) if b["status"] == "holding"]
     holding_sorted = sorted(holding, key=lambda b: b["buy_date"])
@@ -1009,15 +1125,11 @@ def sell_fifo(fund_code: str, total_sell_shares: float,
         fund["supplement_count"] = 0
         print(f"[Position] {fund_code} 全部清仓，重置补仓计数")
 
-    save_positions(data)
-
     total_fee = sum(d["fee"] for d in batch_details if d["fee"] is not None)
     total_net = sum(d["net"] for d in batch_details if d["net"] is not None)
     total_profit = sum(d["profit"] for d in batch_details if d["profit"] is not None)
 
-    print(f"[Position] FIFO卖出 {fund_code}: 总份额{total_sell_shares}, 涉及{len(batch_details)}个批次")
-
-    return {
+    result = {
         "total_sell_shares": round(total_sell_shares, 2),
         "batch_count": len(batch_details),
         "batch_details": batch_details,
@@ -1026,6 +1138,10 @@ def sell_fifo(fund_code: str, total_sell_shares: float,
         "total_profit": round(total_profit, 2) if any(d["profit"] is not None for d in batch_details) else None,
         "nav_pending": sell_nav is None or sell_nav <= 0,
     }
+    _store_operation_receipt(data, request_id, "sell_fifo", fund_code, result)
+    save_positions(data)
+    print(f"[Position] FIFO卖出 {fund_code}: 总份额{total_sell_shares}, 涉及{len(batch_details)}个批次")
+    return result
 
 
 def get_fund_position(fund_code: str) -> dict:
@@ -1107,6 +1223,21 @@ def get_fund_position(fund_code: str) -> dict:
 def get_all_positions() -> dict:
     """返回全部持仓数据"""
     return load_positions()
+
+
+def get_position_storage_status() -> dict:
+    """Return non-sensitive durability status for health checks."""
+    with _position_guard():
+        data = _read_positions_unlocked()
+        primary_raw = POS_FILE.read_bytes() if POS_FILE.exists() else b""
+        mirror_raw = POS_MIRROR_FILE.read_bytes() if POS_MIRROR_FILE.exists() else b""
+        return {
+            "synchronized": bool(primary_raw) and primary_raw == mirror_raw,
+            "revision": _storage_revision(data),
+            "mirror_available": bool(mirror_raw),
+            "local_history_count": len(list(POS_HISTORY_DIR.glob("positions-*.json"))),
+            "mirror_history_count": len(list(POS_MIRROR_HISTORY_DIR.glob("positions-*.json"))),
+        }
 
 
 # ============================================================

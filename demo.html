@@ -798,7 +798,7 @@
             <input type="hidden" id="buyOwner">
             <div class="modal-actions" style="margin-top:12px;">
                 <button class="btn-secondary" onclick="closeModal('buyModal')">取消</button>
-                <button class="btn-success" onclick="submitBuy()">确认录入</button>
+                <button class="btn-success" onclick="this.disabled=true; submitBuy().finally(() => this.disabled=false)">确认录入</button>
             </div>
         </div>
     </div>
@@ -841,7 +841,7 @@
             <input type="hidden" id="sellMode" value="batch">
             <div class="modal-actions" style="margin-top:12px;">
                 <button class="btn-secondary" onclick="closeModal('sellModal')">取消</button>
-                <button class="btn-danger" onclick="submitSell()">确认卖出</button>
+                <button class="btn-danger" onclick="this.disabled=true; submitSell().finally(() => this.disabled=false)">确认卖出</button>
             </div>
         </div>
     </div>
@@ -1006,6 +1006,11 @@
                 }
                 window.scrollTo(0, viewState.scrollY);
             });
+        }
+
+        function createRequestId(prefix) {
+            if (window.crypto?.randomUUID) return `${prefix}-${window.crypto.randomUUID()}`;
+            return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
         }
 
         async function fetchJson(url, options = {}, label = '请求') {
@@ -2536,6 +2541,7 @@
 
             try {
                 const isSupplement = document.getElementById('buySupplement').checked;
+                const requestId = createRequestId('buy');
                 // v5.X: 透传延迟回补标记（由 showBuyModalForRebuy 设置）
                 const _modal = document.getElementById('buyModal');
                 const isRebuy = _modal.dataset.isRebuy === 'true';
@@ -2548,7 +2554,11 @@
                         is_supplement: isSupplement, owner: owner,
                         is_rebuy: isRebuy,
                         pending_rebuy_id: pendingRebuyId,
-                    })
+                        request_id: requestId,
+                    }),
+                    retrySafe: true,
+                    timeoutMs: 30000,
+                    maxRetries: 2,
                 }, '买入');
                 const ownerLabel = owner ? ` [${owner}]` : '';
                 const rebuyTag = isRebuy ? ' [回补]' : '';
@@ -2719,14 +2729,20 @@
 
                 if (mode === 'fifo') {
                     // FIFO 模式：调用新接口，自动按先进先出拆分
-                    const body = { total_sell_shares: sellShares };
+                    const body = {
+                        total_sell_shares: sellShares,
+                        request_id: createRequestId('sell-fifo'),
+                    };
                     if (sellNav) body.sell_nav = sellNav;
                     if (sellDate) body.sell_date = sellDate;
 
                     data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(code)}/sell-fifo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
+                        body: JSON.stringify(body),
+                        retrySafe: true,
+                        timeoutMs: 30000,
+                        maxRetries: 2,
                     }, 'FIFO 卖出');
                     statusMsg = `FIFO卖出成功: ${data.total_sell_shares}份（涉及${data.batch_count}个批次）`;
                     if (data.nav_pending) {
@@ -2740,14 +2756,21 @@
                     const batchId = document.getElementById('sellBatchSelect').value;
                     if (!batchId) { showStatus('请选择卖出批次', 'error'); return; }
 
-                    const body = { batch_id: batchId, sell_shares: sellShares };
+                    const body = {
+                        batch_id: batchId,
+                        sell_shares: sellShares,
+                        request_id: createRequestId('sell'),
+                    };
                     if (sellNav) body.sell_nav = sellNav;
                     if (sellDate) body.sell_date = sellDate;
 
                     data = await fetchJson(`${API_BASE}/v1/position/${encodeURIComponent(code)}/sell`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
+                        body: JSON.stringify(body),
+                        retrySafe: true,
+                        timeoutMs: 30000,
+                        maxRetries: 2,
                     }, '卖出');
                     statusMsg = `卖出成功: ${data.sell_shares}份（持有${data.hold_days}天，费率${data.sell_fee_rate}%）`;
                     if (data.nav_pending) {

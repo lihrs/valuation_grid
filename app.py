@@ -17,7 +17,8 @@ import uvicorn
 
 from valuation.core import (
     load_state, save_state, validate_state,
-    calculate_valuation, calculate_valuation_batch, calculate_valuation_by_state
+    calculate_valuation, calculate_valuation_batch, calculate_valuation_by_state,
+    get_intraday_valuation_snapshot
 )
 from valuation.providers import (
     get_fund_name, set_etf_link_target, get_etf_link_target, clear_etf_link_target,
@@ -203,6 +204,16 @@ def delete_etf_link(link_code: str):
 # ============================================================
 # 估值 API
 # ============================================================
+
+@app.post("/v1/valuation/snapshot")
+def post_valuation_snapshot(req: BatchRequest):
+    """快速返回当天最近一次估值缓存，完整估值仍由 batch 接口刷新。"""
+    if not req.fund_codes:
+        return {"items": []}
+    if len(req.fund_codes) > 2000:
+        raise HTTPException(status_code=400, detail="单次最多2000只基金")
+    return {"items": get_intraday_valuation_snapshot(req.fund_codes)}
+
 
 @app.get("/v1/valuation/{fund_code}")
 def get_valuation(fund_code: str):

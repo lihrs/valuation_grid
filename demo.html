@@ -941,6 +941,8 @@
         const RETRYABLE_API_STATUS = new Set([502, 503, 504]);
         const API_RETRY_DELAYS = [400, 1000];
         const USER_INTERACTION_GRACE_MS = 6000;
+        const VALUATION_FIRST_BATCH_SIZE = 60;
+        const VALUATION_BATCH_SIZE = 120;
 
         function wait(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
@@ -1160,6 +1162,7 @@
             const allCodes = [];
             state.sectors.forEach(s => s.funds.forEach(f => { if (f.code) allCodes.push(f.code); }));
             if (allCodes.length === 0) return;
+            const uniqueCodes = [...new Set(allCodes)];
 
             isRefreshing = true;
             const btn = document.getElementById('refreshBtn');
@@ -1167,37 +1170,95 @@
             btn.disabled = true;
 
             try {
-                const requests = [
-                    fetchJson(`${API_BASE}/v1/valuation/batch`, {
-                        method: 'POST',
-                        timeoutMs: 50000,
-                        maxRetries: 0,
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fund_codes: allCodes })
-                    }, '刷新估值')
-                ];
                 // 只有低频网格页可见时才刷新信号，避免估值页刷新时叠加重请求。
-                if (currentTab === 'strategy') {
-                    requests.push(loadStrategyPanel().catch(() => null));
+                const strategyRefresh = currentTab === 'strategy'
+                    ? loadStrategyPanel().catch(() => null)
+                    : Promise.resolve();
+                let completed = 0;
+                let succeeded = 0;
+                const failedBatches = [];
+                const valuationBatches = [
+                    uniqueCodes.slice(0, VALUATION_FIRST_BATCH_SIZE)
+                ];
+                for (let offset = VALUATION_FIRST_BATCH_SIZE; offset < uniqueCodes.length; offset += VALUATION_BATCH_SIZE) {
+                    valuationBatches.push(uniqueCodes.slice(offset, offset + VALUATION_BATCH_SIZE));
                 }
 
-                const [data] = await Promise.all(requests);
-                valuations = {};
-                (data.items || []).forEach(item => {
-                    if (item?.fund_code) valuations[item.fund_code] = item;
-                });
+                // 首次打开先恢复本机当天缓存；远端行情慢时也不让整张表长期保持“--”。
+                if (Object.keys(valuations).length === 0) {
+                    try {
+                        const snapshot = await fetchJson(`${API_BASE}/v1/valuation/snapshot`, {
+                            method: 'POST',
+                            retrySafe: true,
+                            timeoutMs: 8000,
+                            maxRetries: 1,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ fund_codes: uniqueCodes })
+                        }, '加载估值缓存');
+                        (snapshot.items || []).forEach(item => {
+                            if (item?.fund_code) valuations[item.fund_code] = item;
+                        });
+                        if ((snapshot.items || []).length > 0 && !getRefreshPauseReason()) {
+                            render();
+                            document.getElementById('updateTime').textContent = '已显示今日缓存，正在刷新';
+                        }
+                    } catch (error) {
+                        console.warn('估值缓存加载失败，继续刷新实时数据', error);
+                    }
+                }
+
+                // 大列表分批获取并渐进显示，避免等待全部基金完成后页面仍全是“--”。
+                // 首批按页面顺序优先填充当前可见板块，后续扩大批次以减少远端隧道往返。
+                for (const batchCodes of valuationBatches) {
+                    try {
+                        const data = await fetchJson(`${API_BASE}/v1/valuation/batch`, {
+                            method: 'POST',
+                            retrySafe: true,
+                            timeoutMs: 25000,
+                            maxRetries: 1,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ fund_codes: batchCodes })
+                        }, '刷新估值');
+                        (data.items || []).forEach(item => {
+                            if (item?.fund_code) valuations[item.fund_code] = item;
+                        });
+                        succeeded += batchCodes.length;
+
+                        const pauseReason = getRefreshPauseReason();
+                        if (!pauseReason) {
+                            const panel = document.getElementById('sectors');
+                            const viewState = capturePanelView(panel);
+                            render();
+                            restorePanelView(panel, viewState);
+                        }
+                    } catch (error) {
+                        failedBatches.push({ codes: batchCodes, error });
+                        console.warn('估值分批刷新失败，将保留已有数据', error);
+                    }
+
+                    completed += batchCodes.length;
+                    btn.innerHTML = `<span class="loading"></span>刷新中 ${completed}/${uniqueCodes.length}`;
+                    document.getElementById('updateTime').textContent =
+                        `更新中 ${completed}/${uniqueCodes.length}`;
+                }
+
+                await strategyRefresh;
+                if (succeeded > 0) {
+                    lastRefreshTime = new Date();
+                    document.getElementById('updateTime').textContent =
+                        `更新于 ${lastRefreshTime.toLocaleTimeString()}`;
+                } else if (failedBatches.length > 0) {
+                    document.getElementById('updateTime').textContent = '刷新失败，保留上次数据';
+                }
 
                 const pauseReason = getRefreshPauseReason();
-                if (pauseReason) {
+                if (failedBatches.length > 0) {
+                    const failedCount = failedBatches.reduce((sum, batch) => sum + batch.codes.length, 0);
+                    const failureLabel = failedCount >= uniqueCodes.length ? '估值刷新失败' : '部分估值刷新失败';
+                    showStatus(`${failureLabel}（${failedCount}/${uniqueCodes.length}），已保留原有数据，下次将自动重试`, 'error');
+                } else if (pauseReason && succeeded > 0) {
                     showStatus(`数据已获取，${pauseReason}，页面暂不重绘`, 'info');
-                    return;
                 }
-                const viewState = capturePanelView(document.getElementById('sectors'));
-                render();
-                restorePanelView(document.getElementById('sectors'), viewState);
-                lastRefreshTime = new Date();
-                document.getElementById('updateTime').textContent =
-                    `更新于 ${lastRefreshTime.toLocaleTimeString()}`;
             } catch (e) {
                 showStatus('刷新失败: ' + e.message, 'error');
             } finally {
@@ -1530,6 +1591,7 @@
             let displayName = fund.alias || '';
             let needsEtfLink = false;
             let isNav = false;
+            let isCachedSnapshot = false;
 
             if (val) {
                 if (val.estimation_change !== null && val.estimation_change !== undefined) {
@@ -1537,6 +1599,7 @@
                     changeText = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
                     changeClass = change > 0 ? 'up' : change < 0 ? 'down' : 'flat';
                     if (val._source === 'nav') isNav = true;
+                    if (val._source === 'intraday_cache') isCachedSnapshot = true;
                 }
                 if (val.week_change !== null && val.week_change !== undefined) {
                     const wc = val.week_change;
@@ -1548,11 +1611,14 @@
                     monthText = (mc >= 0 ? '+' : '') + mc.toFixed(2) + '%';
                     monthClass = mc > 0 ? 'up' : mc < 0 ? 'down' : 'flat';
                 }
-                confidence = ((val.calibrated_confidence ?? val.confidence) * 100).toFixed(0) + '%';
+                const confidenceValue = val.calibrated_confidence ?? val.confidence;
+                if (Number.isFinite(confidenceValue)) {
+                    confidence = (confidenceValue * 100).toFixed(0) + '%';
+                }
                 if (!displayName && val.fund_name) {
                     displayName = val.fund_name;
                 }
-                if ((val.calibrated_confidence ?? val.confidence) < 0.15) {
+                if (Number.isFinite(confidenceValue) && confidenceValue < 0.15) {
                     needsEtfLink = true;
                 }
             }
@@ -1569,6 +1635,8 @@
                 } else {
                     navMark = '<span style="font-size:10px;margin-left:2px;color:#10b981;font-weight:400;">✓</span>';
                 }
+            } else if (isCachedSnapshot) {
+                navMark = '<span style="font-size:9px;margin-left:3px;color:#9ca3af;font-weight:400;" title="今日最近一次估值缓存，实时数据正在刷新">缓存</span>';
             }
 
             const etfBtn = needsEtfLink ?
@@ -3485,6 +3553,14 @@
                 markUserInteraction();
             }
         }, true);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden || isRefreshing || Object.keys(valuations).length === 0) return;
+            if (getRefreshPauseReason()) return;
+            const panel = document.getElementById('sectors');
+            const viewState = capturePanelView(panel);
+            render();
+            restorePanelView(panel, viewState);
+        });
 
         window.onload = async () => {
             await loadState();

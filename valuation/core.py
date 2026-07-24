@@ -686,6 +686,29 @@ def _is_market_closed() -> bool:
         pass
     return False  # 盘中或午休，继续用估值
 
+
+def get_intraday_valuation_snapshot(fund_codes: List[str]) -> List[dict]:
+    """快速返回当天最近一次盘中估值，供前端在完整刷新前先恢复可见数据。"""
+    _ensure_intraday_cache_loaded()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    items = []
+    for code in dict.fromkeys(fund_codes):
+        cached = _intraday_estimation_cache.get(code)
+        if not cached or cached.get("date") != today_str or cached.get("est") is None:
+            continue
+        items.append({
+            "fund_code": code,
+            "estimation_change": cached["est"],
+            "week_change": None,
+            "month_change": None,
+            "confidence": None,
+            "calibrated_confidence": None,
+            "_source": "intraday_cache",
+            "_cache_date": today_str,
+        })
+    return items
+
+
 def calculate_valuation_batch(fund_codes: List[str]) -> List[dict]:
     from concurrent.futures import ThreadPoolExecutor, wait
     from .providers import get_fund_nav_history
